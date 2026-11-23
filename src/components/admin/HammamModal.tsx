@@ -7,7 +7,7 @@ interface HammamModalProps {
   onClose: () => void;
   onSave: (data: any) => Promise<void>;
   initialData?: any;
-  destinations: any[];
+  destinations?: any[];
   defaultDestinationId?: string;
   onCreateDestination?: (data: {nameAr: string, nameFr: string, image: string}) => Promise<string | null>;
 }
@@ -19,7 +19,7 @@ const TABS = [
   { id: 'flights', label: 'جداول الرحلات', icon: Plane },
 ];
 
-export default function HammamModal({ isOpen, onClose, onSave, initialData, destinations, defaultDestinationId, onCreateDestination }: HammamModalProps) {
+export default function HammamModal({ isOpen, onClose, onSave, initialData, destinations = [], defaultDestinationId, onCreateDestination }: HammamModalProps) {
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('basic');
   

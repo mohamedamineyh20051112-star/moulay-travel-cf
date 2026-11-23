@@ -92,7 +92,7 @@ const translations = {
   }
 };
 
-export default function FlightBookingForm({ locale, onBack }: { locale: string, onBack: () => void }) {
+export default function FlightBookingForm({ locale, onBack }: { locale: string, onBack?: () => void }) {
   const isRtl = locale === 'ar';
   const t = translations[locale as keyof typeof translations] || translations.fr;
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -125,7 +125,7 @@ export default function FlightBookingForm({ locale, onBack }: { locale: string, 
           <Send size={40} />
         </div>
         <h2 className="text-2xl font-bold text-[#3a2818] mb-4">{t.success}</h2>
-        <button onClick={onBack} className="mt-8 px-8 py-3 bg-[#3a2818] text-white rounded-xl hover:bg-[#e5d5b5] hover:text-[#3a2818] transition-colors font-bold">
+        <button onClick={() => onBack ? onBack() : window.history.back()} className="mt-8 px-8 py-3 bg-[#3a2818] text-white rounded-xl hover:bg-[#e5d5b5] hover:text-[#3a2818] transition-colors font-bold">
           {t.back}
         </button>
       </div>
@@ -135,7 +135,7 @@ export default function FlightBookingForm({ locale, onBack }: { locale: string, 
   return (
     <div className="max-w-4xl mx-auto my-8 bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100" dir={isRtl ? 'rtl' : 'ltr'}>
       <div className="bg-[#3a2818] p-8 text-white relative">
-        <button onClick={onBack} className="absolute top-8 rtl:right-8 ltr:left-8 flex items-center gap-2 text-white/80 hover:text-white transition-colors">
+        <button onClick={() => onBack ? onBack() : window.history.back()} className="absolute top-8 rtl:right-8 ltr:left-8 flex items-center gap-2 text-white/80 hover:text-white transition-colors">
           {isRtl ? <ArrowRight size={20} /> : <ArrowLeft size={20} />}
           <span className="font-medium">{t.back}</span>
         </button>

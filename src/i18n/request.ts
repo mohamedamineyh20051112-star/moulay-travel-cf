@@ -4,7 +4,7 @@ import {notFound} from 'next/navigation';
 export const locales = ['ar', 'fr', 'en'];
 
 export default getRequestConfig(async ({locale}) => {
-  const validLocale = locales.includes(locale as any) ? locale : 'ar';
+  const validLocale: string = (locale && locales.includes(locale as any)) ? locale : 'ar';
 
   let messages;
   if (validLocale === 'fr') {

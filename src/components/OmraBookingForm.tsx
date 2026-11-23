@@ -156,6 +156,8 @@ const formTranslations = {
   }
 };
 
+type ViewState = 'list' | 'details' | 'form' | 'success';
+
 export default function OmraBookingForm({ locale }: { locale: string }) {
   const isRtl = locale === 'ar';
   const tForm = formTranslations[locale as keyof typeof formTranslations] || formTranslations.fr;
@@ -561,7 +563,7 @@ export default function OmraBookingForm({ locale }: { locale: string }) {
                   </tr>
                 </thead>
                 <tbody className="text-gray-700 font-medium">
-                  {selectedHotel.roomPrices.map((room, idx) => (
+                  {selectedHotel.roomPrices.map((room: any, idx: number) => (
                     <tr key={idx} className="border-b border-gray-100 last:border-0 hover:bg-gray-50 transition">
                       <td className="py-4 px-6">{room.type[locale as keyof typeof room.type]}</td>
                       <td className="py-4 px-6 border-l border-gold/20 bg-[#fdfdfd]" dir="ltr">{getPrice(room.priceDzd, room.priceEur)}</td>
@@ -632,7 +634,7 @@ export default function OmraBookingForm({ locale }: { locale: string }) {
                 <MapPin className="w-5 h-5 text-gold" /> {isRtl ? 'المزارات' : 'Visites (Ziyarat)'}
               </h4>
               <ul className="space-y-3">
-                {(Array.isArray(selectedHotel.ziyarat) && selectedHotel.ziyarat.length > 0) ? selectedHotel.ziyarat.map((z, idx) => (
+                {(Array.isArray(selectedHotel.ziyarat) && selectedHotel.ziyarat.length > 0) ? selectedHotel.ziyarat.map((z: any, idx: number) => (
                   <li key={idx} className="flex items-center gap-3 text-gray-700 font-medium">
                     <span className="w-2 h-2 rounded-full bg-gold"></span> {z[locale as keyof typeof z]}
                   </li>
@@ -646,7 +648,7 @@ export default function OmraBookingForm({ locale }: { locale: string }) {
                 <Calendar className="w-5 h-5 text-gold" /> {isRtl ? 'برنامج الرحلة' : 'Programme du Voyage'}
               </h4>
               <ul className="space-y-3">
-                {(Array.isArray(selectedHotel.program) && selectedHotel.program.length > 0) ? selectedHotel.program.map((p, idx) => (
+                {(Array.isArray(selectedHotel.program) && selectedHotel.program.length > 0) ? selectedHotel.program.map((p: any, idx: number) => (
                   <li key={idx} className="flex items-center gap-3 text-gray-700 font-medium">
                     <span className="w-2 h-2 rounded-full bg-gold"></span> {p[locale as keyof typeof p]}
                   </li>

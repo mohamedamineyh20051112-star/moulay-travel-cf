@@ -9,7 +9,7 @@ interface VIPHotelModalProps {
   initialData?: any;
   destinations: any[];
   defaultDestinationId?: string;
-  onCreateDestination?: (nameAr: string) => Promise<string | null>;
+  onCreateDestination?: (data: { nameAr: string; nameFr?: string; image?: string; }) => Promise<string | null>;
 }
 
 const TABS = [
@@ -195,7 +195,7 @@ export default function VIPHotelModal({ isOpen, onClose, onSave, initialData, de
                                      ctx?.drawImage(img, 0, 0, width, height);
                                      setNewDestImage(canvas.toDataURL('image/jpeg', 0.7));
                                    };
-                                   img.src = event.target?.result;
+                                   img.src = (event.target?.result as string) || '';
                                  };
                                  reader.readAsDataURL(file);
                              }} className="w-full border rounded-lg p-2 bg-white" />

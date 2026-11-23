@@ -14,7 +14,8 @@ export interface UserData {
   // Marketer specific
   ccp?: string;
   promoCode?: string;
-  status?: 'pending' | 'approved';
+  status?: 'pending' | 'approved' | 'rejected';
+  commissionRate?: number;
 }
 
 interface AuthContextType {

@@ -8,15 +8,21 @@ import HammamModal from '@/components/admin/HammamModal';
 
 export default function HammamsAdminPage({ params }: { params: { locale: string } }) {
   const [items, setItems] = useState<any[]>([]);
+  const [destinations, setDestinations] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
 
   const fetchItems = async () => {
     try {
-      const snapshot = await getDocs(collection(db, 'hammams'));
-      const data = snapshot.docs.map((doc): any => ({ id: doc.id, ...doc.data() }));
+      const [snap, destSnap] = await Promise.all([
+        getDocs(collection(db, 'hammams')),
+        getDocs(collection(db, 'services_destinations'))
+      ]);
+      const data = snap.docs.map((doc): any => ({ id: doc.id, ...doc.data() }));
       setItems(data);
+      const dests = destSnap.docs.map((doc): any => ({ id: doc.id, ...doc.data() }));
+      setDestinations(dests);
     } catch (error) {
       console.error(error);
     } finally {
@@ -84,7 +90,7 @@ export default function HammamsAdminPage({ params }: { params: { locale: string 
         ))}
       </div>
       
-      <HammamModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSave={handleSave} initialData={editingItem} />
+      <HammamModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSave={handleSave} initialData={editingItem} destinations={destinations} />
     </div>
   );
 }
