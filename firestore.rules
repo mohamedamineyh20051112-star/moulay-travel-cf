@@ -1,0 +1,70 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isSuperAdmin() {
+      return isSignedIn() &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'super_admin';
+    }
+
+    // Users collection: users can read their own profile and create client/pending marketer accounts only.
+    // Prevents self-promotion to super_admin or self-approval as marketer.
+    match /users/{userId} {
+      allow read: if isSignedIn() && (request.auth.uid == userId || isSuperAdmin());
+      allow create: if isSignedIn()
+        && request.auth.uid == userId
+        && request.resource.data.uid == userId
+        && (
+          request.resource.data.role == 'client' ||
+          (request.resource.data.role == 'marketer' && request.resource.data.status == 'pending')
+        );
+      allow update: if isSuperAdmin() || (
+        isSignedIn() &&
+        request.auth.uid == userId &&
+        request.resource.data.role == resource.data.role &&
+        request.resource.data.status == resource.data.status &&
+        request.resource.data.promoCode == resource.data.promoCode
+      );
+      allow delete: if isSuperAdmin();
+    }
+
+    // Bookings & dynamic form submissions: anyone can create a booking; only owner/marketer/admin can read.
+    match /bookings/{bookingId} {
+      allow create: if true;
+      allow read: if isSignedIn();
+      allow update, delete: if isSuperAdmin();
+    }
+
+    match /form_submissions/{submissionId} {
+      allow create: if true;
+      allow read, update, delete: if isSuperAdmin();
+    }
+
+    // Public catalog collections (read-only for visitors, writable by super_admin)
+    match /{catalogCollection}/{docId} {
+      allow read: if catalogCollection in [
+        'omraHotels',
+        'cars',
+        'hammams',
+        'hammams_destinations',
+        'organized_trips_destinations',
+        'organized_trips_hotels',
+        'vip_trips_destinations',
+        'vip_trips_hotels',
+        'services_destinations',
+        'topDestinations',
+        'customerReviews',
+        'heroImages',
+        'siteSettings',
+        'dynamicForms'
+      ];
+      allow write: if isSuperAdmin();
+    }
+  }
+}

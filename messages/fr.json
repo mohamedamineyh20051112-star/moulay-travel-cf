@@ -1,0 +1,181 @@
+{
+  "Navigation": {
+    "home": "Accueil",
+    "top_destinations": "Nos Services & Expériences",
+    "flights": "Billets Avion, Bateau & Train",
+    "hotels": "Hôtels",
+    "umrah": "Omra",
+    "organized_trips": "Voyages Organisés",
+    "vip": "VIP",
+    "visas": "Visas & Résidences",
+    "promotions": "Promotions",
+    "custom_trips": "Voyages sur Mesure",
+    "car_rental": "Location de Voitures",
+    "payment": "Service de Paiement",
+    "insurance": "Assurance Voyage",
+    "wellness": "Bien-être & Thermalisme",
+    "custom": "Services sur Demande",
+    "contact": "Contact"
+  },
+  "Hero": {
+    "title": "Moulay Travel - Cliquez, Réservez, Voyagez",
+    "subtitle": "Votre Agence de Voyage 100% Digitale, Où Que Vous Soyez.",
+    "cta_book": "Réservez maintenant",
+    "cta_whatsapp": "Contactez-nous sur WhatsApp",
+    "stats_experience": "Années d'Expérience",
+    "stats_customers": "Clients Heureux",
+    "stats_destinations": "Destinations Mondiales"
+  },
+  "Common": {
+    "slogan": "Voyagez en toute confiance",
+    "subtitle": "Moulay Travel vous offre les meilleures offres",
+    "agency_name": "Moulay Travel",
+    "service_page_desc": "Bienvenue, veuillez remplir le formulaire ci-dessous pour traiter votre demande. Nous sommes à votre service pour vous fournir les meilleures offres."
+  },
+  "Location": {
+    "title": "Notre Emplacement",
+    "desc": "Rendez-nous visite à notre bureau principal à Oran, où nous sommes heureux de vous offrir les meilleurs services et conseils pour votre prochain voyage.",
+    "address": "Oran, Belgaïd",
+    "contact": "Contactez-nous",
+    "our_links": "Nos Liens",
+    "whatsapp_num": "Numéro WhatsApp"
+  },
+  "Footer": {
+    "contact_title": "Contact",
+    "working_hours": "Heures d'Ouverture",
+    "saturday_thursday": "Samedi → Jeudi",
+    "friday_closed": "Vendredi : Fermé",
+    "rights": "© 2027 Moulay Travel. Tous droits réservés."
+  },
+  "Services": {
+    "title": "Nos Services & Expériences",
+    "promotions": {
+      "title": "Offres, Promotions & Facilités",
+      "desc": "Profitez de nos meilleures offres, promotions exclusives et solutions de paiement facilitées."
+    },
+    "flights": {
+      "title": "Billets Avion, Bateau & Train",
+      "desc": "Trouvez les meilleures options de vols selon votre destination, vos dates et votre budget."
+    },
+    "hotels": {
+      "title": "Hôtels",
+      "desc": "Réservez votre hébergement selon vos envies, votre confort et votre budget."
+    },
+    "umrah": {
+      "title": "Omra",
+      "desc": "Des programmes complets et soigneusement organisés pour accomplir votre Omra en toute sérénité."
+    },
+    "organized_trips": {
+      "title": "Voyages organisés",
+      "desc": "Des séjours conçus et organisés de A à Z pour voyager l’esprit tranquille."
+    },
+    "wellness": {
+      "title": "Bien-être & Thermalisme",
+      "desc": "Découvrez des séjours dédiés à la détente et au bien-être dans des stations thermales, spas et resorts sélectionnés."
+    },
+    "vip": {
+      "title": "Voyages VIP",
+      "desc": "Des prestations exclusives et personnalisées pour une expérience de voyage haut de gamme."
+    },
+    "visas": {
+      "title": "Visas & Résidences",
+      "desc": "Accompagnement dans vos démarches de visa et de résidence selon votre destination."
+    },
+    "car_rental": {
+      "title": "Location de voitures",
+      "desc": "Des solutions de mobilité flexibles et adaptées à vos déplacements et à votre séjour."
+    },
+    "insurance": {
+      "title": "Assurance voyage",
+      "desc": "Voyagez avec plus de sérénité grâce à des solutions de couverture adaptées à votre voyage."
+    },
+    "custom_trips": {
+      "title": "Voyages sur mesure",
+      "desc": "Nous créons votre voyage selon vos envies, vos dates, votre destination et votre budget."
+    },
+    "payment": {
+      "title": "Solutions de paiement",
+      "desc": "Des moyens de paiement simples, flexibles et sécurisés pour faciliter vos réservations."
+    }
+  },
+  "WhyChooseUs": {
+    "title": "Pourquoi Nous Choisir ?",
+    "main_desc": "Moulay Travel allie l'expertise des agences de voyage à la commodité des services numériques pour vous offrir une expérience de voyage plus rapide et plus confortable. Nous vous proposons différents services de voyage en un seul endroit : de la réservation de billets d'avion, d'hôtels, de voyages organisés et de la Omra, au traitement des visas, à la location de voitures et à l'assurance voyage, avec la possibilité de demander des services, de communiquer et d'assurer le suivi en ligne sans avoir à vous déplacer. En plus de finaliser le processus de paiement de manière simple et sécurisée via les méthodes de paiement disponibles. Notre objectif est de simplifier votre voyage depuis la première demande et le choix de l'offre appropriée en passant par la réservation et le paiement jusqu'au voyage, avec un accompagnement personnel, des offres étudiées, une transparence dans le traitement et un service rapide qui correspond à vos besoins.",
+    "quality_title": "Haute Qualité",
+    "quality_desc": "Nous garantissons les meilleurs services touristiques avec des normes internationales.",
+    "trust_title": "Confiance et Sécurité",
+    "trust_desc": "Des milliers de clients nous font confiance chaque année.",
+    "price_title": "Prix Compétitifs",
+    "price_desc": "Nous proposons les meilleurs programmes à des prix abordables.",
+    "support_title": "Support 24/7",
+    "support_desc": "Notre équipe est disponible 24h/24 pour vous aider.",
+    "online_service_title": "Service Numérique",
+    "online_service_desc": "Demandez et suivez les services à distance en toute simplicité.",
+    "online_payment_title": "Paiement en Ligne",
+    "online_payment_desc": "Paiement électronique rapide et sécurisé."
+  },
+  "BookingForm": {
+    "form_title": "Formulaire de Réservation",
+    "full_name": "Nom Complet *",
+    "phone": "Numéro de Téléphone *",
+    "whatsapp": "Numéro WhatsApp",
+    "email": "Email",
+    "service_type": "Type de Service *",
+    "offer_name": "Nom de l'offre (si applicable)",
+    "offer_placeholder": "Ex: Offre Turquie...",
+    "destination": "Destination",
+    "destination_placeholder": "Ex: Dubaï, Istanbul...",
+    "departure_date": "Date de Départ",
+    "return_date": "Date de Retour",
+    "adults": "Nombre d'adultes",
+    "children": "Nombre d'enfants",
+    "documents": "Documents Requis (Optionnel)",
+    "passport": "Télécharger Passeport (PDF/JPG)",
+    "id_card": "Télécharger Carte d'Identité",
+    "notes": "Notes Supplémentaires",
+    "notes_placeholder": "Tout autre détail...",
+    "submit": "Confirmer la Réservation",
+    "submitting": "Envoi en cours...",
+    "disclaimer": "* Remarque: Ce formulaire est une demande et non une confirmation. Nous vous contacterons bientôt.",
+    "success_title": "Demande envoyée avec succès!",
+    "success_msg": "Votre demande a été enregistrée sous le numéro",
+    "success_desc": "Notre équipe traitera votre demande et vous contactera bientôt.",
+    "back_home": "Retour à l'accueil",
+    "contact_wa": "Contacter via WhatsApp"
+  },
+  "WorldClock": {
+    "title": "Heure mondiale",
+    "algiers": "Alger",
+    "newYork": "New York",
+    "london": "Londres",
+    "paris": "Paris",
+    "istanbul": "Istanbul",
+    "dubai": "Dubaï",
+    "riyadh": "Riyad",
+    "beijing": "Pékin",
+    "singapore": "Singapour"
+  },
+  "Admin": {
+    "offerCode": "Code de l'offre",
+    "zoneArea": "Zone / Quartier",
+    "distanceFromHaram": "Distance du Haram",
+    "transportAvailable": "Transport disponible",
+    "shuttleAvailable": "Navette disponible",
+    "shuttleSchedule": "Horaires de navette",
+    "makkahHotel": "Hôtel à La Mecque",
+    "madinahHotel": "Hôtel à Médine",
+    "programInfo": "Informations programme / dates",
+    "googleMaps": "Google Maps",
+    "additionalNotes": "Notes supplémentaires"
+  },
+  "TransportForms": {
+    "title": "Billets Avion, Bateau & Train",
+    "airplane": "Billets d'avion",
+    "ferry": "Billets de bateau & ferry",
+    "train": "Billets de train & TGV",
+    "airplaneDesc": "Trouvez les meilleures options de vols selon votre destination, vos dates et votre budget.",
+    "ferryDesc": "Voyagez en ferry avec ou sans véhicule. Indiquez votre itinéraire et vos préférences.",
+    "trainDesc": "Trouvez les meilleures options de train selon votre destination, vos dates et vos préférences.",
+    "back": "Retour aux choix"
+  }
+}

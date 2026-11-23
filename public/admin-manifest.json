@@ -1,0 +1,21 @@
+﻿{
+  "name": "Moulay Travel Admin",
+  "short_name": "MT Admin",
+  "description": "لوحة تحكم وكالة مولاي ترافل",
+  "start_url": "/ar/admin",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1e3a8a",
+  "icons": [
+    {
+      "src": "/logo.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg"
+    },
+    {
+      "src": "/logo.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg"
+    }
+  ]
+}

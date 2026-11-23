@@ -1,0 +1,181 @@
+{
+  "Navigation": {
+    "home": "Home",
+    "top_destinations": "Our Services & Experiences",
+    "flights": "Flight Tickets",
+    "hotels": "Hotels",
+    "umrah": "Omra",
+    "organized_trips": "Organized Trips",
+    "vip": "VIP",
+    "visas": "Visas & Residences",
+    "promotions": "Promotions",
+    "custom_trips": "Tailor-made Trips",
+    "car_rental": "Car Rental",
+    "payment": "Payment Solutions",
+    "insurance": "Travel Insurance",
+    "wellness": "Wellness & Thermalism",
+    "custom": "Custom Services",
+    "contact": "Contact Us"
+  },
+  "Hero": {
+    "title": "Moulay Travel - Click, Book, Travel",
+    "subtitle": "Your 100% Digital Travel Agency, Wherever You Are.",
+    "cta_book": "Book Now",
+    "cta_whatsapp": "Contact us on WhatsApp",
+    "stats_experience": "Years of Experience",
+    "stats_customers": "Happy Customers",
+    "stats_destinations": "Global Destinations"
+  },
+  "Common": {
+    "slogan": "Travel with confidence",
+    "subtitle": "Moulay Travel offers you the best deals",
+    "agency_name": "Moulay Travel",
+    "service_page_desc": "Welcome, please fill out the form below to process your request. We are at your service to provide you with the best offers."
+  },
+  "Location": {
+    "title": "Our Location",
+    "desc": "Visit us at our main office in Oran, where we are happy to provide you with the best services and advice for your next trip.",
+    "address": "Oran, Belgaïd",
+    "contact": "Contact Us",
+    "our_links": "Our Links",
+    "whatsapp_num": "WhatsApp Number"
+  },
+  "Footer": {
+    "contact_title": "Contact Us",
+    "working_hours": "Working Hours",
+    "saturday_thursday": "Saturday → Thursday",
+    "friday_closed": "Friday : Closed",
+    "rights": "© 2027 Moulay Travel. All rights reserved."
+  },
+  "Services": {
+    "title": "Our Services & Experiences",
+    "promotions": {
+      "title": "Offers, Promotions & Facilities",
+      "desc": "Enjoy our best offers, exclusive promotions and easy payment solutions."
+    },
+    "flights": {
+      "title": "Flight Tickets",
+      "desc": "Find the best flight options according to your destination, dates and budget."
+    },
+    "hotels": {
+      "title": "Hotels",
+      "desc": "Book your accommodation according to your desires, comfort and budget."
+    },
+    "umrah": {
+      "title": "Omra",
+      "desc": "Complete and carefully organized programs to perform your Omra with peace of mind."
+    },
+    "organized_trips": {
+      "title": "Organized Trips",
+      "desc": "Stays designed and organized from A to Z to travel with peace of mind."
+    },
+    "wellness": {
+      "title": "Wellness & Thermalism",
+      "desc": "Discover stays dedicated to relaxation and well-being in selected thermal spas and resorts."
+    },
+    "vip": {
+      "title": "VIP Trips",
+      "desc": "Exclusive and personalized services for a high-end travel experience."
+    },
+    "visas": {
+      "title": "Visas & Residences",
+      "desc": "Assistance in your visa and residence procedures according to your destination."
+    },
+    "car_rental": {
+      "title": "Car Rental",
+      "desc": "Flexible mobility solutions adapted to your travels and stay."
+    },
+    "insurance": {
+      "title": "Travel Insurance",
+      "desc": "Travel with more peace of mind thanks to coverage solutions adapted to your trip."
+    },
+    "custom_trips": {
+      "title": "Tailor-made Trips",
+      "desc": "We create your trip according to your desires, dates, destination and budget."
+    },
+    "payment": {
+      "title": "Payment Solutions",
+      "desc": "Simple, flexible and secure payment methods to facilitate your bookings."
+    }
+  },
+  "WhyChooseUs": {
+    "title": "Why Choose Us?",
+    "main_desc": "Moulay Travel combines the expertise of travel agencies with the convenience of digital services to offer you a faster and more comfortable travel experience. We offer you various travel services in one place: from booking flight tickets, hotels, organized trips and Omra, to processing visas, car rental and travel insurance, with the possibility of requesting services, communicating and following up online without having to move. In addition to completing the payment process simply and securely via the available payment methods. Our goal is to simplify your trip from the first request and the choice of the appropriate offer through booking and payment to travel, with personal support, studied offers, transparency in processing and fast service that suits your needs.",
+    "quality_title": "High Quality",
+    "quality_desc": "We guarantee the best tourism services with international standards.",
+    "trust_title": "Trust and Security",
+    "trust_desc": "Thousands of customers trust us every year.",
+    "price_title": "Competitive Prices",
+    "price_desc": "We offer the best programs at affordable prices.",
+    "support_title": "24/7 Support",
+    "support_desc": "Our team is available 24/7 to help you.",
+    "online_service_title": "Digital Service",
+    "online_service_desc": "Request and track services remotely with ease.",
+    "online_payment_title": "Online Payment",
+    "online_payment_desc": "Fast and secure online payment."
+  },
+  "BookingForm": {
+    "form_title": "Booking Form",
+    "full_name": "Full Name *",
+    "phone": "Phone Number *",
+    "whatsapp": "WhatsApp Number",
+    "email": "Email",
+    "service_type": "Service Type *",
+    "offer_name": "Offer Name (if applicable)",
+    "offer_placeholder": "Ex: Turkey Offer...",
+    "destination": "Destination",
+    "destination_placeholder": "Ex: Dubai, Istanbul...",
+    "departure_date": "Departure Date",
+    "return_date": "Return Date",
+    "adults": "Number of adults",
+    "children": "Number of children",
+    "documents": "Required Documents (Optional)",
+    "passport": "Upload Passport (PDF/JPG)",
+    "id_card": "Upload ID Card",
+    "notes": "Additional Notes",
+    "notes_placeholder": "Any other details...",
+    "submit": "Confirm Booking",
+    "submitting": "Submitting...",
+    "disclaimer": "* Note: This form is a request and not a confirmation. We will contact you soon.",
+    "success_title": "Request sent successfully!",
+    "success_msg": "Your request has been registered under the number",
+    "success_desc": "Our team will process your request and contact you soon.",
+    "back_home": "Back to home",
+    "contact_wa": "Contact via WhatsApp"
+  },
+  "WorldClock": {
+    "title": "World Clock",
+    "algiers": "Algiers",
+    "newYork": "New York",
+    "london": "London",
+    "paris": "Paris",
+    "istanbul": "Istanbul",
+    "dubai": "Dubai",
+    "riyadh": "Riyadh",
+    "beijing": "Beijing",
+    "singapore": "Singapore"
+  },
+  "Admin": {
+    "offerCode": "Offer Code",
+    "zoneArea": "Zone / Area",
+    "distanceFromHaram": "Distance from Haram",
+    "transportAvailable": "Transport Available",
+    "shuttleAvailable": "Shuttle Available",
+    "shuttleSchedule": "Shuttle Schedule",
+    "makkahHotel": "Makkah Hotel",
+    "madinahHotel": "Madinah Hotel",
+    "programInfo": "Program / Date Information",
+    "googleMaps": "Google Maps",
+    "additionalNotes": "Additional Notes"
+  },
+  "TransportForms": {
+    "title": "Transport Tickets",
+    "airplane": "Flight Tickets",
+    "airplaneDesc": "Book domestic and international flights at the best rates.",
+    "ferry": "Ferry Tickets",
+    "ferryDesc": "Comfortable sea crossings to Europe and Mediterranean ports.",
+    "train": "Train Tickets",
+    "trainDesc": "Fast and convenient rail travel across your destinations.",
+    "back": "Back to Transport Options"
+  }
+}
