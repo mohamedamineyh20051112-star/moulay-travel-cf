@@ -19,7 +19,7 @@ export default function ReviewsAdmin({ params }: { params: { locale: string } })
     setLoading(true);
     try {
       const querySnapshot = await getDocs(collection(db, 'customerReviews'));
-      const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const data = querySnapshot.docs.map((doc): any => ({ id: doc.id, ...doc.data() }));
       setReviews(data);
     } catch (error) {
       console.error("Error fetching reviews:", error);

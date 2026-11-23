@@ -23,10 +23,10 @@ export default function DiscountsPage({ params: { locale } }: { params: { locale
       
       const hasDiscount = (d: any) => d.discountPrice || d.discountPriceEuro || d.isInstallment;
 
-      setCars(carsSnap.docs.map(d => ({ id: d.id, ...d.data() })).filter(hasDiscount));
-      setHammams(hammamsSnap.docs.map(d => ({ id: d.id, ...d.data() })).filter(hasDiscount));
-      setTrips(tripsSnap.docs.map(d => ({ id: d.id, ...d.data() })).filter(hasDiscount));
-      setOmra(omraSnap.docs.map(d => ({ id: d.id, ...d.data() })).filter(hasDiscount));
+      setCars(carsSnap.docs.map((d): any => ({ id: d.id, ...d.data() })).filter(hasDiscount));
+      setHammams(hammamsSnap.docs.map((d): any => ({ id: d.id, ...d.data() })).filter(hasDiscount));
+      setTrips(tripsSnap.docs.map((d): any => ({ id: d.id, ...d.data() })).filter(hasDiscount));
+      setOmra(omraSnap.docs.map((d): any => ({ id: d.id, ...d.data() })).filter(hasDiscount));
     };
     fetchData();
   }, []);

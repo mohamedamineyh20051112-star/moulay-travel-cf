@@ -32,10 +32,10 @@ export default function DiscountsAdminPage() {
       ]);
 
       const allItems = [
-        ...carsSnap.docs.map(d => ({ id: d.id, _collection: 'cars', ...d.data() })),
-        ...hammamsSnap.docs.map(d => ({ id: d.id, _collection: 'hammams', ...d.data() })),
-        ...tripsSnap.docs.map(d => ({ id: d.id, _collection: 'organized_trips_hotels', ...d.data() })),
-        ...omraSnap.docs.map(d => ({ id: d.id, _collection: 'omraHotels', ...d.data() }))
+        ...carsSnap.docs.map((d): any => ({ id: d.id, _collection: 'cars', ...d.data() })),
+        ...hammamsSnap.docs.map((d): any => ({ id: d.id, _collection: 'hammams', ...d.data() })),
+        ...tripsSnap.docs.map((d): any => ({ id: d.id, _collection: 'organized_trips_hotels', ...d.data() })),
+        ...omraSnap.docs.map((d): any => ({ id: d.id, _collection: 'omraHotels', ...d.data() }))
       ];
 
       setItems(allItems);

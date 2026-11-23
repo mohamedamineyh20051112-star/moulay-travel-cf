@@ -14,11 +14,11 @@ export default function AnalyticsAdmin({ params }: { params: { locale: string } 
     const fetchData = async () => {
       try {
         const bookingsSnap = await getDocs(query(collection(db, 'bookings'), orderBy('createdAt', 'desc')));
-        const bookingsData = bookingsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+        const bookingsData = bookingsSnap.docs.map((d): any => ({ id: d.id, ...d.data() }));
         setBookings(bookingsData);
 
         const usersSnap = await getDocs(collection(db, 'users'));
-        const usersData = usersSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+        const usersData = usersSnap.docs.map((d): any => ({ id: d.id, ...d.data() }));
         setMarketers(usersData.filter(u => u.role === 'marketer' && u.status === 'approved'));
       } catch (e) {
         console.error("Error fetching analytics data", e);

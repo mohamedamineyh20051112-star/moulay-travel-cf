@@ -19,7 +19,7 @@ export default function ClientsAdmin({ params }: { params: { locale: string } })
     try {
       const q = query(collection(db, 'users'), where('role', '==', 'client'));
       const snapshot = await getDocs(q);
-      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const data = snapshot.docs.map((doc): any => ({ id: doc.id, ...doc.data() }));
       // Sort by newest
       data.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
       setClients(data);

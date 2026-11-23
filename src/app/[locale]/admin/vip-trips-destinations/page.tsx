@@ -19,10 +19,7 @@ export default function OTDestinationsAdmin({ params }: { params: { locale: stri
   const fetchDestinations = async () => {
     try {
       const querySnapshot = await getDocs(collection(db, 'vip_trips_destinations'));
-      const destsData = querySnapshot.docs.map(d => ({
-        id: d.id,
-        ...d.data()
-      }));
+      const destsData = querySnapshot.docs.map((d): any => ({ id: d.id, ...d.data() }));
       setDestinations(destsData);
     } catch (error) {
       console.error("Error fetching destinations:", error);

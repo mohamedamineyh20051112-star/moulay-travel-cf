@@ -175,7 +175,7 @@ export default function OmraBookingForm({ locale }: { locale: string }) {
     const fetchHotels = async () => {
       try {
         const querySnapshot = await getDocs(collection(db, 'omraHotels'));
-        const fetched = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const fetched = querySnapshot.docs.map((doc): any => ({ id: doc.id, ...doc.data() }));
         if (fetched.length > 0) {
           // Format Firestore hotel data to match the UI requirements (string prices for getPrice)
           const formatted = fetched.map(h => ({

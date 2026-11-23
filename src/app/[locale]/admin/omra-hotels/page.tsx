@@ -18,7 +18,7 @@ export default function OmraHotelsAdmin({ params }: { params: { locale: string }
     setLoading(true);
     try {
       const querySnapshot = await getDocs(collection(db, 'omraHotels'));
-      const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const data = querySnapshot.docs.map((doc): any => ({ id: doc.id, ...doc.data() }));
       setHotels(data);
     } catch (error) {
       console.error("Error fetching hotels:", error);

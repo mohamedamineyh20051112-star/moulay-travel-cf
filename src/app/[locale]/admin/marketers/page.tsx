@@ -19,7 +19,7 @@ export default function MarketersAdmin({ params }: { params: { locale: string } 
     try {
       const q = query(collection(db, 'users'), where('role', '==', 'marketer'));
       const snapshot = await getDocs(q);
-      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const data = snapshot.docs.map((doc): any => ({ id: doc.id, ...doc.data() }));
       data.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
       setMarketers(data);
     } catch (error) {

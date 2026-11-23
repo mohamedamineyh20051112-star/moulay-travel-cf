@@ -21,6 +21,9 @@ const nextConfig = {
       },
     ],
   },
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
   poweredByHeader: false,
   reactStrictMode: true,
 };

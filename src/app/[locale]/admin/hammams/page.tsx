@@ -15,7 +15,7 @@ export default function HammamsAdminPage({ params }: { params: { locale: string 
   const fetchItems = async () => {
     try {
       const snapshot = await getDocs(collection(db, 'hammams'));
-      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const data = snapshot.docs.map((doc): any => ({ id: doc.id, ...doc.data() }));
       setItems(data);
     } catch (error) {
       console.error(error);
