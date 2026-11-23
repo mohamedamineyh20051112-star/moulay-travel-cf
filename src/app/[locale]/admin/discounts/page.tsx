@@ -12,8 +12,8 @@ export default function DiscountsAdminPage() {
   
   // Edit state
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [discountPrice, setDiscountPrice] = useState<number | ''>('');
-  const [discountPriceEuro, setDiscountPriceEuro] = useState<number | ''>('');
+  const [discountPrice, setDiscountPrice] = useState<string | number>('');
+  const [discountPriceEuro, setDiscountPriceEuro] = useState<string | number>('');
   const [isInstallment, setIsInstallment] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 

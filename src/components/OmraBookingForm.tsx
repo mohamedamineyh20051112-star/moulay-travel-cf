@@ -168,7 +168,7 @@ export default function OmraBookingForm({ locale }: { locale: string }) {
   };
 
   const [view, setView] = useState<ViewState>('list');
-  const [selectedHotel, setSelectedHotel] = useState<typeof HOTELS[0] | null>(null);
+  const [selectedHotel, setSelectedHotel] = useState<any>(null);
   const [dynamicHotels, setDynamicHotels] = useState<any[]>(HOTELS);
 
   useEffect(() => {
@@ -210,7 +210,7 @@ export default function OmraBookingForm({ locale }: { locale: string }) {
     }, 100);
   };
 
-  const handleSelectHotel = (hotel: typeof HOTELS[0]) => {
+  const handleSelectHotel = (hotel: any) => {
     setSelectedHotel(hotel);
     setView('details');
     scrollToTop();
