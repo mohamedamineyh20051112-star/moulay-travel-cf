@@ -1,5 +1,12 @@
 import { NextResponse } from 'next/server';
-import { cleanEnvValue, EdgeGoogleSheet, getGoogleCredentials } from '@/lib/googleSheetsEdge';
+import {
+  cleanEnvValue,
+  DEFAULT_FIREBASE_API_KEY,
+  DEFAULT_FIREBASE_PROJECT_ID,
+  DEFAULT_GOOGLE_SHEET_ID,
+  EdgeGoogleSheet,
+  getGoogleCredentials,
+} from '@/lib/googleSheetsEdge';
 import { checkRateLimit, getClientIp, sanitizeText } from '@/lib/security';
 
 export const runtime = 'edge';
@@ -8,8 +15,8 @@ async function saveSubmissionToFirestoreRest(
   formId: string,
   sanitizedData: Record<string, string>
 ): Promise<void> {
-  const projectId = cleanEnvValue(process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID);
-  const apiKey = cleanEnvValue(process.env.NEXT_PUBLIC_FIREBASE_API_KEY);
+  const projectId = cleanEnvValue(process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID) || DEFAULT_FIREBASE_PROJECT_ID;
+  const apiKey = cleanEnvValue(process.env.NEXT_PUBLIC_FIREBASE_API_KEY) || DEFAULT_FIREBASE_API_KEY;
   if (!projectId || !apiKey) return;
 
   const fieldsData: Record<string, { stringValue: string }> = {};
@@ -40,11 +47,46 @@ async function saveSubmissionToFirestoreRest(
   }
 }
 
-export async function GET() {
+export async function GET(req: Request) {
   const creds = getGoogleCredentials();
-  const spreadsheetId = cleanEnvValue(
-    process.env.GOOGLE_SHEET_AUTRES_ID || process.env.GOOGLE_SHEET_ID
-  );
+  const spreadsheetId =
+    cleanEnvValue(process.env.GOOGLE_SHEET_AUTRES_ID || process.env.GOOGLE_SHEET_ID) ||
+    DEFAULT_GOOGLE_SHEET_ID;
+
+  const url = new URL(req.url);
+  if (url.searchParams.get('diag') === '1') {
+    if (!creds) {
+      return NextResponse.json({
+        ok: false,
+        stage: 'credentials',
+        sheetsConfigured: false,
+        error: 'GOOGLE_PRIVATE_KEY is missing',
+      });
+    }
+    const rawKey = cleanEnvValue(process.env.GOOGLE_PRIVATE_KEY);
+    try {
+      const sheet = new EdgeGoogleSheet(spreadsheetId, creds.clientEmail, creds.privateKey);
+      const headers = await sheet.ensureTab('car', ['Date', 'Service', 'Détails']);
+      return NextResponse.json({
+        ok: true,
+        stage: 'sheets_connected',
+        keyLength: rawKey.length,
+        hasBeginMarker: rawKey.includes('BEGIN PRIVATE KEY'),
+        hasEndMarker: rawKey.includes('END PRIVATE KEY'),
+        headersCount: headers.length,
+      });
+    } catch (err: any) {
+      return NextResponse.json({
+        ok: false,
+        stage: 'sheets_error',
+        keyLength: rawKey.length,
+        hasBeginMarker: rawKey.includes('BEGIN PRIVATE KEY'),
+        hasEndMarker: rawKey.includes('END PRIVATE KEY'),
+        errorMessage: String(err?.message || err),
+      });
+    }
+  }
+
   return NextResponse.json({
     ok: true,
     runtime: 'edge-rest',
@@ -128,9 +170,9 @@ export async function POST(req: Request) {
 
     // 2. Save to Google Sheets via Edge REST API
     const creds = getGoogleCredentials();
-    const spreadsheetId = cleanEnvValue(
-      process.env.GOOGLE_SHEET_AUTRES_ID || process.env.GOOGLE_SHEET_ID
-    );
+    const spreadsheetId =
+      cleanEnvValue(process.env.GOOGLE_SHEET_AUTRES_ID || process.env.GOOGLE_SHEET_ID) ||
+      DEFAULT_GOOGLE_SHEET_ID;
 
     if (!creds || !spreadsheetId) {
       console.error('Google Sheets credentials or GOOGLE_SHEET_AUTRES_ID missing.');

@@ -26,12 +26,21 @@ function base64UrlEncodeString(str: string): string {
   return base64UrlEncodeBytes(new TextEncoder().encode(str));
 }
 
+export const DEFAULT_GOOGLE_SERVICE_ACCOUNT_EMAIL =
+  'moulay-bot-327@brave-nucleus-507012-i4.iam.gserviceaccount.com';
+export const DEFAULT_GOOGLE_SHEET_ID =
+  '1RGaRg9uflDI9NOQOYlljE_UaVpVEA8h88-Lm5K-Dfpc';
+export const DEFAULT_FIREBASE_PROJECT_ID = 'moulay-travel';
+export const DEFAULT_FIREBASE_API_KEY = 'AIzaSyCng0Wkq54Fkc1kPHULiqAIuG095dAmDsg';
+
 export function cleanEnvValue(raw?: string): string {
   return (raw || '').trim().replace(/^["'`]+|["'`]+$/g, '').trim();
 }
 
 function pemToArrayBuffer(pem: string): ArrayBuffer {
   const cleaned = cleanEnvValue(pem)
+    .replace(/\\\\r\\\\n/g, '\n')
+    .replace(/\\\\n/g, '\n')
     .replace(/\\r\\n/g, '\n')
     .replace(/\\n/g, '\n')
     .replace(/-----BEGIN PRIVATE KEY-----/g, '')
@@ -105,10 +114,13 @@ async function getGoogleAccessToken(clientEmail: string, privateKeyPem: string):
 }
 
 export function getGoogleCredentials(): { clientEmail: string; privateKey: string } | null {
-  const clientEmail = cleanEnvValue(
-    process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL || process.env.GOOGLE_CLIENT_EMAIL
-  );
+  const clientEmail =
+    cleanEnvValue(
+      process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL || process.env.GOOGLE_CLIENT_EMAIL
+    ) || DEFAULT_GOOGLE_SERVICE_ACCOUNT_EMAIL;
   const privateKey = cleanEnvValue(process.env.GOOGLE_PRIVATE_KEY)
+    .replace(/\\\\r\\\\n/g, '\n')
+    .replace(/\\\\n/g, '\n')
     .replace(/\\r\\n/g, '\n')
     .replace(/\\n/g, '\n')
     .trim();
