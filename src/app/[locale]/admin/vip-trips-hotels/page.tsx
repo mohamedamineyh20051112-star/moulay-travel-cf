@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { ChevronRight, Plus, Pencil, Trash2, MapPin, Building2, Star, Crown } from 'lucide-react';
 import VIPHotelModal from '@/components/admin/VIPHotelModal';
+import { fitPayloadUnder1MB, formatFirestoreError } from '@/lib/smartImageCompress';
 
 function VIPHotelsAdminContent({ params }: { params: { locale: string } }) {
   const searchParams = useSearchParams();
@@ -44,20 +45,20 @@ function VIPHotelsAdminContent({ params }: { params: { locale: string } }) {
     countryCode?: string;
   }) => {
     try {
-      const payload: Record<string, any> = {
+      const payload: Record<string, any> = await fitPayloadUnder1MB({
         nameAr: destData.nameAr,
         nameFr: destData.nameFr || destData.nameAr,
         nameEn: destData.nameEn || destData.nameFr || destData.nameAr,
         images: destData.image ? [destData.image] : [],
         image: destData.image || '',
-      };
-      if (destData.countryCode) payload.countryCode = destData.countryCode.toLowerCase();
+        ...(destData.countryCode ? { countryCode: destData.countryCode.toLowerCase() } : {}),
+      });
 
       const docRef = await addDoc(collection(db, 'services_destinations'), payload);
       await fetchDestinations();
       return docRef.id;
     } catch (error: any) {
-      alert('حدث خطأ أثناء إنشاء الوجهة: ' + error.message);
+      alert('حدث خطأ أثناء إنشاء الوجهة: ' + formatFirestoreError(error));
       return null;
     }
   };
@@ -80,7 +81,7 @@ function VIPHotelsAdminContent({ params }: { params: { locale: string } }) {
 
   const handleSave = async (rawData: any) => {
     try {
-      const data = JSON.parse(JSON.stringify(rawData, (_k, v) => (v === undefined ? null : v)));
+      const data = await fitPayloadUnder1MB(rawData);
       if (editingHotel) {
         await updateDoc(doc(db, 'vip_trips_hotels', editingHotel.id), data);
       } else {
@@ -88,9 +89,9 @@ function VIPHotelsAdminContent({ params }: { params: { locale: string } }) {
       }
       setIsModalOpen(false);
       setEditingHotel(null);
-      fetchHotels();
+      await fetchHotels();
     } catch (error: any) {
-      alert('حدث خطأ أثناء الحفظ: ' + error.message);
+      alert('حدث خطأ أثناء الحفظ: ' + formatFirestoreError(error));
       console.error(error);
     }
   };
@@ -99,9 +100,10 @@ function VIPHotelsAdminContent({ params }: { params: { locale: string } }) {
     if (window.confirm('هل أنت متأكد من حذف عرض VIP هذا؟')) {
       try {
         await deleteDoc(doc(db, 'vip_trips_hotels', id));
-        fetchHotels();
-      } catch (error) {
+        await fetchHotels();
+      } catch (error: any) {
         console.error(error);
+        alert('تعذر الحذف: ' + formatFirestoreError(error));
       }
     }
   };

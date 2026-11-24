@@ -4,6 +4,52 @@ import { useState } from "react";
 import { Send, Train, Calendar, Users, Briefcase, Armchair, Phone, ArrowLeft, ArrowRight, MapPin } from "lucide-react";
 
 const translations = {
+  en: {
+    title: "QUOTE REQUEST — Train / TGV",
+    subtitle: "Please fill out this form so our team can find the best schedules and fares. We will reply quickly on WhatsApp.",
+    tripType: "Trip Type",
+    tripOptions: ['One-way', 'Round-trip'],
+    departure: "Departure City / Station *",
+    destination: "Arrival City / Station *",
+    dates: "Travel Dates",
+    dateDep: "Preferred Departure Date",
+    dateRet: "Preferred Return Date",
+    flexibility: "Flexibility",
+    flexOptions: ["Fixed dates", "± 1 day", "± 2 days", "± 3 days"],
+    timePref: "Time Preference",
+    timeOptions: ["Morning", "Afternoon", "Evening", "No preference"],
+    travelers: "Travelers",
+    adult: "Number of Adults",
+    child: "Number of Children",
+    baby: "Infants / Toddlers",
+    ages: "Children's Ages",
+    agesPlaceholder: "e.g. 6 yrs, 9 yrs",
+    trainPref: "Train Preferences",
+    trainType: "Preferred Train Type",
+    trainOptions: ["TGV INOUI", "OUIGO", "Eurostar", "Intercités / Other", "No preference"],
+    class: "Preferred Class",
+    classOptions: ["2nd Class", "1st Class", "No preference"],
+    conn: "Connections",
+    connOptions: ["Direct only", "With connection", "Any"],
+    seat: "Seat Preference",
+    seatOptions: ["Window", "Aisle", "Table / Group of 4", "No preference"],
+    company: "Preferred Operator / Company (Optional)",
+    baggage: "Baggage & Equipment",
+    bagOptions: ["Standard luggage", "Oversized luggage", "Bicycle", "Stroller", "Other"],
+    contact: "Contact Details",
+    name: "Full Name *",
+    phone: "Phone / WhatsApp *",
+    email: "Email *",
+    promo: "Promo Code",
+    additional: "Additional Information",
+    message: "Message / Special Request",
+    precisions: "Baggage Details",
+    submit: "Request My Quote",
+    secure: "Your information is secure.",
+    back: "Back to options",
+    success: "Request sent successfully! Our team will contact you soon.",
+    error: "An error occurred while sending your request. Please check your details and try again."
+  },
   fr: {
     title: "DEMANDE DE DEVIS — Train / TGV",
     subtitle: "Merci de remplir ce formulaire pour que notre équipe recherche les meilleurs horaires et tarifs. Nous vous répondrons rapidement sur WhatsApp.",
@@ -107,6 +153,7 @@ export default function TrainBookingForm({ locale, onBack }: { locale: string, o
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setStatus("idle");
     const formData = new FormData(e.currentTarget);
     
     // Handle multiple checkboxes for baggages
@@ -117,11 +164,12 @@ export default function TrainBookingForm({ locale, onBack }: { locale: string, o
     }
 
     try {
-      await fetch('/api/submit-dynamic-form', {
+      const res = await fetch('/api/submit-dynamic-form', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ formId: 'train', data })
       });
+      if (!res.ok) throw new Error('Request failed');
       setStatus("success");
     } catch (error) {
       setStatus("error");
@@ -312,6 +360,12 @@ export default function TrainBookingForm({ locale, onBack }: { locale: string, o
           <label className="block font-semibold text-gray-700 text-lg mb-4">{t.additional}</label>
           <textarea name="Message" rows={3} placeholder={t.message} className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gold"></textarea>
         </div>
+
+        {status === "error" && (
+          <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-xl text-sm font-bold text-center">
+            {t.error}
+          </div>
+        )}
 
         <div className="text-center pt-4">
           <button type="submit" disabled={isSubmitting} className="w-full md:w-auto px-12 py-4 bg-[#3a2818] text-white font-bold rounded-xl hover:bg-[#e5d5b5] hover:text-[#3a2818] transition-all flex justify-center items-center gap-3 mx-auto">

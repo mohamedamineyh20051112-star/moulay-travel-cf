@@ -23,6 +23,11 @@ import {
   WorldDestinationPreset,
 } from '@/data/worldDestinations';
 import { autoTranslateTexts } from '@/lib/translateClient';
+import {
+  compressImageFileToBase64,
+  fitPayloadUnder1MB,
+  formatFirestoreError,
+} from '@/lib/smartImageCompress';
 
 export default function ServicesDestinationsAdmin({ params }: { params: { locale: string } }) {
   const [destinations, setDestinations] = useState<any[]>([]);
@@ -138,33 +143,19 @@ export default function ServicesDestinationsAdmin({ params }: { params: { locale
     }
   };
 
-  const handleUploadImage = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleUploadImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    e.target.value = '';
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        let width = img.width;
-        let height = img.height;
-        const maxSize = 900;
-        if (width > height && width > maxSize) {
-          height *= maxSize / width;
-          width = maxSize;
-        } else if (height > maxSize) {
-          width *= maxSize / height;
-          height = maxSize;
-        }
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        ctx?.drawImage(img, 0, 0, width, height);
-        setImage(canvas.toDataURL('image/jpeg', 0.8));
-      };
-      img.src = (event.target?.result as string) || '';
-    };
-    reader.readAsDataURL(file);
+    try {
+      const compressed = await compressImageFileToBase64(file, {
+        maxDimension: 900,
+        maxBytes: 120_000,
+      });
+      setImage(compressed);
+    } catch (err: any) {
+      alert(err?.message || 'تعذر ضغط الصورة');
+    }
   };
 
   const handleSave = async () => {
@@ -183,15 +174,13 @@ export default function ServicesDestinationsAdmin({ params }: { params: { locale
           : autoTranslateTexts([nameAr.trim()], 'en', 'ar'),
       ]);
 
-      const payload: Record<string, any> = {
+      const payload: Record<string, any> = await fitPayloadUnder1MB({
         nameAr: nameAr.trim(),
         nameFr: trFr[0] || nameAr.trim(),
         nameEn: trEn[0] || trFr[0] || nameAr.trim(),
         image: image || (countryCode ? `/flags/${countryCode.toLowerCase()}.svg` : ''),
-      };
-      if (countryCode.trim()) {
-        payload.countryCode = countryCode.trim().toLowerCase();
-      }
+        ...(countryCode.trim() ? { countryCode: countryCode.trim().toLowerCase() } : {}),
+      });
 
       if (editingDest) {
         const srcCol = editingDest._sourceCollection || 'services_destinations';
@@ -210,11 +199,7 @@ export default function ServicesDestinationsAdmin({ params }: { params: { locale
       await fetchDestinations();
     } catch (error: any) {
       console.error('Error saving destination:', error);
-      if (error?.code === 'permission-denied') {
-        alert('رفضت قاعدة البيانات التعديل: تأكد من تسجيل الدخول بحساب المدير (super_admin) على الموقع.');
-      } else {
-        alert('حدث خطأ أثناء حفظ الوجهة: ' + (error?.message || 'خطأ غير معروف'));
-      }
+      alert('حدث خطأ أثناء حفظ الوجهة: ' + formatFirestoreError(error));
     } finally {
       setSaving(false);
     }
@@ -231,11 +216,7 @@ export default function ServicesDestinationsAdmin({ params }: { params: { locale
         await fetchDestinations();
       } catch (error: any) {
         console.error('Error deleting destination:', error);
-        if (error?.code === 'permission-denied') {
-          alert('رفضت قاعدة البيانات الحذف: تأكد من تسجيل الدخول بحساب المدير (super_admin) على الموقع.');
-        } else {
-          alert('حدث خطأ أثناء حذف الوجهة: ' + (error?.message || 'خطأ غير معروف'));
-        }
+        alert('حدث خطأ أثناء حذف الوجهة: ' + formatFirestoreError(error));
       }
     }
   };

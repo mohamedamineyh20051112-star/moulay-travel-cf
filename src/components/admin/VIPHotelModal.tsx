@@ -6,6 +6,12 @@ import FeaturesToggleEditor from '@/components/admin/FeaturesToggleEditor';
 import { CustomServiceFeature, getDefaultEnabledFeatureIds } from '@/data/serviceFeatures';
 import { autoTranslateTexts } from '@/lib/translateClient';
 import { useCurrencyStore, convertDzdToEur, parseNumericPrice } from '@/store/useCurrencyStore';
+import {
+  compressImageFileToBase64,
+  estimateFirestoreDocBytes,
+  formatDocSizeLabel,
+  MAX_SAFE_DOC_BYTES,
+} from '@/lib/smartImageCompress';
 
 interface VIPHotelModalProps {
   isOpen: boolean;
@@ -117,35 +123,20 @@ export default function VIPHotelModal({
 
   if (!isOpen) return null;
 
-  const handleUploadCompressedImage = (
+  const handleUploadCompressedImage = async (
     file: File | undefined,
     onDone: (dataUrl: string) => void
   ) => {
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        let width = img.width;
-        let height = img.height;
-        const maxSize = 900;
-        if (width > height && width > maxSize) {
-          height *= maxSize / width;
-          width = maxSize;
-        } else if (height > maxSize) {
-          width *= maxSize / height;
-          height = maxSize;
-        }
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        ctx?.drawImage(img, 0, 0, width, height);
-        onDone(canvas.toDataURL('image/jpeg', 0.78));
-      };
-      img.src = (event.target?.result as string) || '';
-    };
-    reader.readAsDataURL(file);
+    try {
+      const compressed = await compressImageFileToBase64(file, {
+        maxDimension: 900,
+        maxBytes: 105_000,
+      });
+      onDone(compressed);
+    } catch (err: any) {
+      alert(err?.message || 'تعذر ضغط الصورة');
+    }
   };
 
   const handleSave = async () => {
@@ -822,18 +813,48 @@ export default function VIPHotelModal({
         </div>
 
         {/* Footer Actions */}
-        <div className="p-4 border-t bg-gray-50 flex justify-end gap-3">
-          <button type="button" onClick={onClose} className="px-6 py-2 rounded-xl text-gray-600 font-medium hover:bg-gray-200">
-            إلغاء
-          </button>
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={loading || !nameAr || !destinationId}
-            className="px-8 py-2 bg-gray-900 text-amber-300 rounded-xl font-bold hover:bg-amber-600 hover:text-white transition-colors disabled:opacity-50 flex items-center gap-2"
-          >
-            {loading ? 'جاري الترجمة والحفظ...' : 'حفظ عرض VIP'}
-          </button>
+        <div className="p-4 border-t bg-gray-50 flex flex-wrap justify-between items-center gap-3">
+          {(() => {
+            const docBytes = estimateFirestoreDocBytes({
+              destinationId,
+              nameAr,
+              descriptionAr,
+              images,
+              roomImages,
+              foodImages,
+              roomPrices,
+              program,
+              schedules,
+            });
+            const isWarning = docBytes > MAX_SAFE_DOC_BYTES * 0.85;
+            return (
+              <span
+                className={`text-xs px-3 py-1.5 rounded-lg border font-medium ${
+                  isWarning
+                    ? 'bg-amber-50 border-amber-200 text-amber-800'
+                    : 'bg-white border-gray-200 text-gray-600'
+                }`}
+              >
+                حجم ملف العرض (ملف مستقل 1MB):{' '}
+                <strong dir="ltr" className="font-mono">
+                  {formatDocSizeLabel(docBytes)}
+                </strong>
+              </span>
+            );
+          })()}
+          <div className="flex items-center gap-3 mr-auto">
+            <button type="button" onClick={onClose} className="px-6 py-2 rounded-xl text-gray-600 font-medium hover:bg-gray-200">
+              إلغاء
+            </button>
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={loading || !nameAr || !destinationId}
+              className="px-8 py-2 bg-gray-900 text-amber-300 rounded-xl font-bold hover:bg-amber-600 hover:text-white transition-colors disabled:opacity-50 flex items-center gap-2"
+            >
+              {loading ? 'جاري الترجمة والحفظ...' : 'حفظ عرض VIP'}
+            </button>
+          </div>
         </div>
       </div>
     </div>

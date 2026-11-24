@@ -29,7 +29,16 @@ let inflightPromise: Promise<SiteContactInfo> | null = null;
 
 function cleanWhatsappDigits(raw: unknown): string {
   if (typeof raw !== 'string' && typeof raw !== 'number') return DEFAULT_SITE_CONTACT.whatsapp;
-  const digits = String(raw).replace(/[^0-9]/g, '');
+  let digits = String(raw).replace(/[^0-9]/g, '');
+  if (digits.startsWith('00')) {
+    digits = digits.slice(2);
+  }
+  // Convert Algerian national numbers (05/06/07xxxxxxxx or 02/03/04xxxxxxx) to 213...
+  if (digits.length === 10 && /^0[567]\d{8}$/.test(digits)) {
+    digits = `213${digits.slice(1)}`;
+  } else if (digits.length === 9 && /^0[234]\d{7}$/.test(digits)) {
+    digits = `213${digits.slice(1)}`;
+  }
   return digits.length >= 8 ? digits : DEFAULT_SITE_CONTACT.whatsapp;
 }
 

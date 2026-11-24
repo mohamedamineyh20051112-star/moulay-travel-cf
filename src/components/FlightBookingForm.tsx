@@ -2,10 +2,50 @@
 
 import { useState } from "react";
 import { Send, PlaneTakeoff, PlaneLanding, Calendar, Users, Briefcase, Armchair, Phone, ArrowLeft, ArrowRight } from "lucide-react";
-import { db } from '@/lib/firebase';
-import { collection, addDoc } from 'firebase/firestore';
 
 const translations = {
+  en: {
+    title: "QUOTE REQUEST — Flight Ticket",
+    subtitle: "Please fill out this form so our team can find the best flight options. We will reply quickly on WhatsApp.",
+    tripType: "Trip Type",
+    tripOptions: ['One-way', 'Round-trip', 'Multi-city'],
+    departure: "Departure City *",
+    destination: "Destination *",
+    dates: "Travel Dates",
+    dateDep: "Preferred Departure Date *",
+    dateRet: "Preferred Return Date",
+    flexibility: "Date Flexibility",
+    flexOptions: ["Fixed dates", "± 1 day", "± 2 days", "± 3 days"],
+    timePref: "Time Preference",
+    timeOptions: ["Morning", "Afternoon", "Evening", "No preference"],
+    travelers: "Travelers",
+    adult: "Adults (12+ years)",
+    child: "Children (2 to 11 years)",
+    baby: "Infants (under 2 years)",
+    ages: "Children / Infants Ages",
+    agesPlaceholder: "e.g. 6 yrs, 9 yrs, 18 mos",
+    flightPref: "Flight Preferences",
+    flightType: "Preferred Flight Type",
+    flightOptions: ["Direct only", "With stopover", "Any"],
+    class: "Cabin Class",
+    classOptions: ["Economy", "Premium Economy", "Business", "First Class"],
+    airline: "Preferred Airline (Optional)",
+    airplaneType: "Aircraft Type (Optional)",
+    baggage: "Baggage Allowance",
+    bagOptions: ["Cabin & Checked", "Checked only", "Cabin only", "No baggage"],
+    contact: "Contact Details",
+    name: "Full Name *",
+    phone: "Phone / WhatsApp *",
+    email: "Email *",
+    promo: "Promo Code",
+    additional: "Additional Information",
+    message: "Message / Special Request",
+    submit: "Request My Quote",
+    secure: "Your information is secure.",
+    back: "Back to options",
+    success: "Request sent successfully! Our team will contact you soon.",
+    error: "An error occurred while sending your request. Please check your details and try again."
+  },
   fr: {
     title: "DEMANDE DE DEVIS — Billet d'avion",
     subtitle: "Merci de remplir ce formulaire pour que notre équipe recherche les meilleures options. Nous vous répondrons rapidement sur WhatsApp.",
@@ -101,15 +141,17 @@ export default function FlightBookingForm({ locale, onBack }: { locale: string, 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setStatus("idle");
     const formData = new FormData(e.currentTarget);
     const data = Object.fromEntries(formData.entries());
 
     try {
-      await fetch('/api/submit-dynamic-form', {
+      const res = await fetch('/api/submit-dynamic-form', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ formId: 'airplane', data })
       });
+      if (!res.ok) throw new Error('Request failed');
       setStatus("success");
     } catch (error) {
       setStatus("error");
@@ -291,6 +333,12 @@ export default function FlightBookingForm({ locale, onBack }: { locale: string, 
           <label className="block font-semibold text-gray-700 text-lg mb-4">{t.additional}</label>
           <textarea name="Message" rows={3} placeholder={t.message} className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gold"></textarea>
         </div>
+
+        {status === "error" && (
+          <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-xl text-sm font-bold text-center">
+            {t.error}
+          </div>
+        )}
 
         <div className="text-center pt-4">
           <button type="submit" disabled={isSubmitting} className="w-full md:w-auto px-12 py-4 bg-[#3a2818] text-white font-bold rounded-xl hover:bg-[#e5d5b5] hover:text-[#3a2818] transition-all flex justify-center items-center gap-3 mx-auto">

@@ -1,7 +1,7 @@
 {
   "Navigation": {
     "home": "Accueil",
-    "top_destinations": "Nos Services & Expériences",
+    "top_destinations": "Nos Destinations",
     "flights": "Billets Avion, Bateau & Train",
     "hotels": "Hôtels",
     "umrah": "Omra",
@@ -28,7 +28,7 @@
   },
   "Common": {
     "slogan": "Voyagez en toute confiance",
-    "subtitle": "Moulay Travel vous offre les meilleures offres",
+    "subtitle": "Moulay Travel vous propose les meilleures offres",
     "agency_name": "Moulay Travel",
     "service_page_desc": "Bienvenue, veuillez remplir le formulaire ci-dessous pour traiter votre demande. Nous sommes à votre service pour vous fournir les meilleures offres."
   },
@@ -45,7 +45,7 @@
     "working_hours": "Heures d'Ouverture",
     "saturday_thursday": "Samedi → Jeudi",
     "friday_closed": "Vendredi : Fermé",
-    "rights": "© 2027 Moulay Travel. Tous droits réservés."
+    "rights": "© 2026 Moulay Travel. Tous droits réservés."
   },
   "Services": {
     "title": "Nos Services & Expériences",

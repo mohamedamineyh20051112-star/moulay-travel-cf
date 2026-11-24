@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { ChevronRight, Plus, Pencil, Trash2, MapPin, Building2, Star } from 'lucide-react';
 import OTHotelModal from '@/components/admin/OTHotelModal';
+import { fitPayloadUnder1MB, formatFirestoreError } from '@/lib/smartImageCompress';
 
 function OTHotelsAdminContent({ params }: { params: { locale: string } }) {
   const searchParams = useSearchParams();
@@ -39,19 +40,19 @@ function OTHotelsAdminContent({ params }: { params: { locale: string } }) {
 
   const handleCreateDestination = async (data: { nameAr: string; nameFr: string; nameEn?: string; image: string; countryCode?: string }) => {
     try {
-      const payload: Record<string, any> = {
+      const payload: Record<string, any> = await fitPayloadUnder1MB({
         nameAr: data.nameAr,
         nameFr: data.nameFr || data.nameAr,
         nameEn: data.nameEn || data.nameFr || data.nameAr,
         image: data.image || '',
         images: data.image ? [data.image] : [],
-      };
-      if (data.countryCode) payload.countryCode = data.countryCode.toLowerCase();
+        ...(data.countryCode ? { countryCode: data.countryCode.toLowerCase() } : {}),
+      });
       const docRef = await addDoc(collection(db, 'services_destinations'), payload);
       await fetchDestinations();
       return docRef.id;
     } catch (error: any) {
-      alert("حدث خطأ أثناء إنشاء الوجهة: " + error.message);
+      alert("حدث خطأ أثناء إنشاء الوجهة: " + formatFirestoreError(error));
       return null;
     }
   };
@@ -75,7 +76,7 @@ function OTHotelsAdminContent({ params }: { params: { locale: string } }) {
 
   const handleSave = async (rawData: any) => {
     try {
-      const data = JSON.parse(JSON.stringify(rawData, (k, v) => v === undefined ? null : v));
+      const data = await fitPayloadUnder1MB(rawData);
       if (editingHotel) {
         await updateDoc(doc(db, 'organized_trips_hotels', editingHotel.id), data);
       } else {
@@ -83,9 +84,9 @@ function OTHotelsAdminContent({ params }: { params: { locale: string } }) {
       }
       setIsModalOpen(false);
       setEditingHotel(null);
-      fetchHotels();
+      await fetchHotels();
     } catch (error: any) {
-      alert("حدث خطأ أثناء الحفظ: " + error.message);
+      alert("حدث خطأ أثناء الحفظ: " + formatFirestoreError(error));
       console.error(error);
     }
   };
@@ -94,9 +95,10 @@ function OTHotelsAdminContent({ params }: { params: { locale: string } }) {
     if (window.confirm('هل أنت متأكد من حذف هذا الفندق/الرحلة؟')) {
       try {
         await deleteDoc(doc(db, 'organized_trips_hotels', id));
-        fetchHotels();
-      } catch (error) {
+        await fetchHotels();
+      } catch (error: any) {
         console.error(error);
+        alert("تعذر الحذف: " + formatFirestoreError(error));
       }
     }
   };

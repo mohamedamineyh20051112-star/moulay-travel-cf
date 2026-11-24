@@ -4,6 +4,58 @@ import { useState } from "react";
 import { Send, Ship, Calendar, Users, Briefcase, Armchair, Phone, ArrowLeft, ArrowRight, MapPin, Car } from "lucide-react";
 
 const translations = {
+  en: {
+    title: "QUOTE REQUEST — Boat / Ferry",
+    subtitle: "Please fill out this form so our team can find the best sea crossing. We will reply quickly on WhatsApp.",
+    tripType: "Trip Type",
+    tripOptions: ['One-way', 'Round-trip'],
+    departure: "Departure Port / City *",
+    destination: "Arrival Port / City *",
+    dates: "Travel Dates",
+    dateDep: "Preferred Departure Date",
+    dateRet: "Preferred Return Date",
+    flexibility: "Flexibility",
+    flexOptions: ["Fixed dates", "± 1 day", "± 2 days", "± 3 days"],
+    timePref: "Time Preference",
+    timeOptions: ["Morning", "Afternoon", "Evening", "Night", "No preference"],
+    travelers: "Travelers",
+    adult: "Number of Adults",
+    child: "Number of Children",
+    baby: "Number of Infants",
+    ages: "Children / Infants Ages",
+    agesPlaceholder: "e.g. 6 yrs, 9 yrs, 18 mos",
+    vehicle: "Vehicle",
+    vehicleQuestion: "Are you traveling with a vehicle? *",
+    vehicleNo: "No — Foot passenger",
+    vehicleYes: "Yes — With vehicle",
+    vehType: "Vehicle Type",
+    vehTypeOptions: ["Car", "SUV / 4x4", "Van / Utility", "Motorcycle", "Campervan", "Other"],
+    vehModel: "Make and Model",
+    vehModelPlaceholder: "e.g. Peugeot 3008",
+    vehImm: "License Plate",
+    vehFuel: "Fuel Type",
+    vehFuelOptions: ["Gasoline", "Diesel", "Hybrid", "Electric", "Other"],
+    vehDim: "Vehicle Dimensions",
+    vehLen: "Length (m)",
+    vehHeight: "Height (m)",
+    vehEq: "Extra Equipment",
+    vehEqOptions: ["None", "Roof box", "Trailer", "Bike rack"],
+    inst: "Onboard Accommodation",
+    instType: "Preferred Type",
+    instOptions: ["Reclining Seat", "Standard Seat", "Inside Cabin", "Outside Cabin", "Private Cabin", "Family Cabin"],
+    contact: "Contact Details",
+    name: "Full Name *",
+    phone: "Phone / WhatsApp *",
+    email: "Email *",
+    promo: "Promo Code",
+    additional: "Additional Information",
+    message: "Message / Special Request",
+    submit: "Request My Quote",
+    secure: "Your information is secure.",
+    back: "Back to options",
+    success: "Request sent successfully! Our team will contact you soon.",
+    error: "An error occurred while sending your request. Please check your details and try again."
+  },
   fr: {
     title: "DEMANDE DE DEVIS — Bateau / Ferry",
     subtitle: "Merci de remplir ce formulaire pour que notre équipe recherche la meilleure traversée. Nous vous répondrons rapidement sur WhatsApp.",
@@ -120,6 +172,7 @@ export default function FerryBookingForm({ locale, onBack }: { locale: string, o
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setStatus("idle");
     const formData = new FormData(e.currentTarget);
     const data = Object.fromEntries(formData.entries());
 
@@ -134,11 +187,12 @@ export default function FerryBookingForm({ locale, onBack }: { locale: string, o
     }
 
     try {
-      await fetch('/api/submit-dynamic-form', {
+      const res = await fetch('/api/submit-dynamic-form', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ formId: 'ferry', data })
       });
+      if (!res.ok) throw new Error('Request failed');
       setStatus("success");
     } catch (error) {
       setStatus("error");
@@ -357,6 +411,12 @@ export default function FerryBookingForm({ locale, onBack }: { locale: string, o
           <label className="block font-semibold text-gray-700 text-lg mb-4">{t.additional}</label>
           <textarea name="Message" rows={3} placeholder={t.message} className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gold"></textarea>
         </div>
+
+        {status === "error" && (
+          <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-xl text-sm font-bold text-center">
+            {t.error}
+          </div>
+        )}
 
         <div className="text-center pt-4">
           <button type="submit" disabled={isSubmitting} className="w-full md:w-auto px-12 py-4 bg-[#3a2818] text-white font-bold rounded-xl hover:bg-[#e5d5b5] hover:text-[#3a2818] transition-all flex justify-center items-center gap-3 mx-auto">

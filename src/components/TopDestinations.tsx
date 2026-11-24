@@ -133,10 +133,15 @@ function TopDestinationCard({
   );
 }
 
-export default function TopDestinations() {
+export default function TopDestinations({
+  showEmptyFallback = false,
+}: {
+  showEmptyFallback?: boolean;
+}) {
   const locale = useLocale() as "ar" | "fr" | "en";
   const isRtl = locale === "ar";
   const [destinations, setDestinations] = useState<ResolvedTopDestination[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchDestinationsAndOffers = async () => {
@@ -226,12 +231,49 @@ export default function TopDestinations() {
         setDestinations(resolved);
       } catch (err) {
         console.error("Error fetching destinations:", err);
+      } finally {
+        setLoading(false);
       }
     };
     fetchDestinationsAndOffers();
   }, [locale]);
 
-  if (destinations.length === 0) return null;
+  if (loading) {
+    if (!showEmptyFallback) return null;
+    return (
+      <section className="py-24 bg-white" dir={isRtl ? "rtl" : "ltr"}>
+        <div className="container mx-auto px-4 max-w-7xl flex justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary" />
+        </div>
+      </section>
+    );
+  }
+
+  if (destinations.length === 0) {
+    if (!showEmptyFallback) return null;
+    return (
+      <section className="py-24 bg-white" dir={isRtl ? "rtl" : "ltr"}>
+        <div className="container mx-auto px-4 max-w-3xl text-center">
+          <h1 className="text-3xl md:text-4xl font-black text-[#1e3a5f] mb-4">
+            {isRtl ? "أشهر وجهاتنا" : locale === "fr" ? "Nos destinations" : "Our Destinations"}
+          </h1>
+          <p className="text-gray-600 mb-8 text-lg">
+            {isRtl
+              ? "يتم حالياً تحديث قائمة الوجهات السياحية والعروض. تفضل بزيارة الصفحة الرئيسية لاستكشاف جميع خدماتنا."
+              : locale === "fr"
+                ? "Nos destinations sont en cours de mise à jour. Découvrez tous nos services depuis l'accueil."
+                : "Our destinations are currently being updated. Explore all our services from the home page."}
+          </p>
+          <Link
+            href={`/${locale}`}
+            className="inline-flex items-center justify-center px-8 py-3 rounded-full bg-primary text-white font-bold hover:bg-gold hover:text-black transition-colors"
+          >
+            {isRtl ? "العودة إلى الرئيسية" : locale === "fr" ? "Retour à l'accueil" : "Back to Home"}
+          </Link>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="py-20 bg-white relative" dir={isRtl ? "rtl" : "ltr"}>

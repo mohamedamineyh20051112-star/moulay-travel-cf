@@ -1,8 +1,8 @@
 {
   "Navigation": {
     "home": "Home",
-    "top_destinations": "Our Services & Experiences",
-    "flights": "Flight Tickets",
+    "top_destinations": "Top Destinations",
+    "flights": "Flight, Ferry & Train Tickets",
     "hotels": "Hotels",
     "umrah": "Omra",
     "organized_trips": "Organized Trips",
@@ -45,7 +45,7 @@
     "working_hours": "Working Hours",
     "saturday_thursday": "Saturday → Thursday",
     "friday_closed": "Friday : Closed",
-    "rights": "© 2027 Moulay Travel. All rights reserved."
+    "rights": "© 2026 Moulay Travel. All rights reserved."
   },
   "Services": {
     "title": "Our Services & Experiences",
@@ -54,7 +54,7 @@
       "desc": "Enjoy our best offers, exclusive promotions and easy payment solutions."
     },
     "flights": {
-      "title": "Flight Tickets",
+      "title": "Flight, Ferry & Train Tickets",
       "desc": "Find the best flight options according to your destination, dates and budget."
     },
     "hotels": {

@@ -5,6 +5,7 @@ import { collection, getDocs, deleteDoc, doc, addDoc, updateDoc } from 'firebase
 import Link from 'next/link';
 import { ChevronRight, Plus, Trash2, Edit } from 'lucide-react';
 import CarModal from '@/components/admin/CarModal';
+import { fitPayloadUnder1MB, formatFirestoreError } from '@/lib/smartImageCompress';
 
 export default function CarsAdminPage({ params }: { params: { locale: string } }) {
   const [items, setItems] = useState<any[]>([]);
@@ -28,8 +29,9 @@ export default function CarsAdminPage({ params }: { params: { locale: string } }
     fetchItems();
   }, []);
 
-  const handleSave = async (data: any) => {
+  const handleSave = async (rawData: any) => {
     try {
+      const data = await fitPayloadUnder1MB(rawData);
       if (editingItem) {
         await updateDoc(doc(db, 'cars', editingItem.id), data);
       } else {
@@ -37,16 +39,22 @@ export default function CarsAdminPage({ params }: { params: { locale: string } }
       }
       setIsModalOpen(false);
       setEditingItem(null);
-      fetchItems();
-    } catch (error) {
+      await fetchItems();
+    } catch (error: any) {
       console.error(error);
+      alert('تعذر حفظ السيارة: ' + formatFirestoreError(error));
     }
   };
 
   const handleDelete = async (id: string) => {
     if (window.confirm('هل أنت متأكد من الحذف؟')) {
-      await deleteDoc(doc(db, 'cars', id));
-      fetchItems();
+      try {
+        await deleteDoc(doc(db, 'cars', id));
+        await fetchItems();
+      } catch (error: any) {
+        console.error(error);
+        alert('تعذر حذف السيارة: ' + formatFirestoreError(error));
+      }
     }
   };
 
@@ -97,7 +105,7 @@ export default function CarsAdminPage({ params }: { params: { locale: string } }
                     <span className="text-emerald-600 font-bold">{(base - disc).toLocaleString('fr-DZ')} د.ج</span>
                   </div>
                 ) : (
-                  <p className="text-gold font-bold mt-2">{item.startingPrice} د.ج</p>
+                  <p className="text-gold font-bold mt-2">{base.toLocaleString('fr-DZ')} د.ج</p>
                 )}
                 <div className="flex gap-2 mt-4">
                   <button onClick={() => { setEditingItem(item); setIsModalOpen(true); }} className="flex-1 bg-blue-50 text-blue-600 py-2 rounded-lg">تعديل</button>

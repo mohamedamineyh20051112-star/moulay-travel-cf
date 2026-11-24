@@ -114,7 +114,13 @@ export default function Header({ locale }: { locale: string }) {
       <div className={`fixed top-4 z-50 ${isRtl ? "left-4" : "right-4"}`}>
         <button
           type="button"
-          onClick={() => router.back()}
+          onClick={() => {
+            if (typeof window !== "undefined" && window.history.length > 1) {
+              router.back();
+            } else {
+              router.push(`/${locale}`);
+            }
+          }}
           className="bg-black/50 backdrop-blur-md p-3 rounded-full border border-white/20 text-white hover:bg-gold hover:text-black transition-colors shadow-[0_4px_30px_rgba(0,0,0,0.1)] flex items-center justify-center"
           title={authText.back}
           aria-label={authText.back}

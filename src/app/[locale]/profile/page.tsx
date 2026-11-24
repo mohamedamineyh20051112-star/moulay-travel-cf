@@ -3,6 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { User as UserIcon, LogOut, Mail, Phone, Calendar, Tag, CreditCard, BarChart } from 'lucide-react';
+import Link from 'next/link';
 import { auth, db } from '@/lib/firebase';
 import { signOut } from 'firebase/auth';
 import { collection, query, where, getDocs } from 'firebase/firestore';
@@ -15,7 +16,7 @@ export default function ProfilePage({ params }: { params: { locale: string } }) 
 
   useEffect(() => {
     if (!loading && !user) {
-      router.push('/');
+      router.push(`/${params.locale}`);
     }
   }, [user, loading, router, params.locale]);
 
@@ -48,7 +49,7 @@ export default function ProfilePage({ params }: { params: { locale: string } }) 
 
   const handleLogout = async () => {
     await signOut(auth);
-    router.push('/');
+    router.push(`/${params.locale}`);
   };
 
   if (loading || !user) return <div className="min-h-screen flex items-center justify-center">جاري التحميل...</div>;
@@ -62,7 +63,21 @@ export default function ProfilePage({ params }: { params: { locale: string } }) 
               <UserIcon className="w-12 h-12 text-white" />
             </div>
             <h1 className="text-3xl font-bold mb-2">{userData?.name}</h1>
-            <p className="text-white/80">{userData?.role === 'marketer' ? 'حساب مسوق (Affiliate)' : 'حساب زبون'}</p>
+            <p className="text-white/80">
+              {userData?.role === 'super_admin'
+                ? 'حساب المدير العام (Admin)'
+                : userData?.role === 'marketer'
+                  ? 'حساب مسوق (Affiliate)'
+                  : 'حساب زبون'}
+            </p>
+            {userData?.role === 'super_admin' && (
+              <Link
+                href={`/${params.locale}/admin`}
+                className="inline-flex items-center gap-2 mt-4 px-5 py-2 rounded-full bg-gold text-black font-bold text-sm hover:opacity-90 transition-opacity"
+              >
+                فتح لوحة تحكم الإدارة
+              </Link>
+            )}
           </div>
 
           <div className="p-8">

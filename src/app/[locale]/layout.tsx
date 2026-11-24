@@ -27,7 +27,7 @@ export async function generateMetadata({
   const t = await getTranslations({ locale, namespace: "Common" });
   const siteName = t("agency_name");
   const description = t("agency_name") + " - " + t("subtitle");
-  const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://moulaytravel.com").replace(/\/$/, "");
+  const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://moulay-travel.pages.dev").replace(/\/$/, "");
 
   return {
     title: `${siteName} - ${t("slogan")}`,

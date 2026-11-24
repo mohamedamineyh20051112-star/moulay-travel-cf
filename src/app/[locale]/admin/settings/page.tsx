@@ -4,6 +4,11 @@ import { db } from '@/lib/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import Link from 'next/link';
 import { ChevronRight, Save, Clock, Link as LinkIcon, Settings as SettingsIcon } from 'lucide-react';
+import {
+  compressImageFileToBase64,
+  fitPayloadUnder1MB,
+  formatFirestoreError,
+} from '@/lib/smartImageCompress';
 
 export default function SettingsAdmin({ params }: { params: { locale: string } }) {
   const [loading, setLoading] = useState(true);
@@ -79,18 +84,19 @@ export default function SettingsAdmin({ params }: { params: { locale: string } }
   const handleSave = async () => {
     setSaving(true);
     try {
-      await setDoc(doc(db, 'siteSettings', 'global'), {
+      const payload = await fitPayloadUnder1MB({
         workingHours: { ar: hoursAr, fr: hoursFr },
         forms: forms,
         logoUrl: logoUrl,
         contact: contact,
         exchangeRateMode,
         customEurRate: Number(customEurRate) || 250
-      }, { merge: true });
+      });
+      await setDoc(doc(db, 'siteSettings', 'global'), payload, { merge: true });
       alert('تم حفظ الإعدادات بنجاح!');
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      alert('حدث خطأ أثناء الحفظ');
+      alert('حدث خطأ أثناء الحفظ: ' + formatFirestoreError(err));
     }
     setSaving(false);
   };
@@ -103,26 +109,20 @@ export default function SettingsAdmin({ params }: { params: { locale: string } }
     setContact(prev => ({ ...prev, [key]: value }));
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    e.target.value = '';
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        let width = img.width, height = img.height;
-        const maxSize = 400;
-        if (width > height && width > maxSize) { height *= maxSize / width; width = maxSize; }
-        else if (height > maxSize) { width *= maxSize / height; height = maxSize; }
-        canvas.width = width; canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        ctx?.drawImage(img, 0, 0, width, height);
-        setLogoUrl(canvas.toDataURL('image/png', 0.9));
-      };
-      img.src = event.target?.result as string;
-    };
-    reader.readAsDataURL(file);
+    try {
+      const compressed = await compressImageFileToBase64(file, {
+        maxDimension: 400,
+        maxBytes: 90_000,
+        preferPng: true,
+      });
+      setLogoUrl(compressed);
+    } catch (err: any) {
+      alert(err?.message || 'تعذر ضغط الشعار');
+    }
   };
 
   if (loading) {

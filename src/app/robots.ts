@@ -1,12 +1,13 @@
 import { MetadataRoute } from 'next';
 
 export default function robots(): MetadataRoute.Robots {
+  const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://moulay-travel.pages.dev').replace(/\/$/, '');
   return {
     rules: {
       userAgent: '*',
       allow: '/',
-      disallow: ['/api/'],
+      disallow: ['/api/', '/ar/admin/', '/fr/admin/', '/en/admin/'],
     },
-    sitemap: 'https://moulaytravel.com/sitemap.xml',
+    sitemap: `${baseUrl}/sitemap.xml`,
   };
 }

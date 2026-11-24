@@ -1,6 +1,14 @@
 import BookingForm from "@/components/BookingForm";
 import { getTranslations } from 'next-intl/server';
+import { redirect } from 'next/navigation';
 import type { Metadata } from 'next';
+
+const LEGACY_SERVICE_REDIRECTS: Record<string, string> = {
+  promotions: 'discounts',
+  vip: 'vip_trips',
+  wellness: 'hammams',
+  car_rental: 'cars',
+};
 
 export async function generateMetadata({ params: { locale, service } }: { params: { locale: string, service: string } }): Promise<Metadata> {
   const tService = await getTranslations({ locale, namespace: 'Services' });
@@ -19,6 +27,11 @@ export async function generateMetadata({ params: { locale, service } }: { params
 }
 
 export default async function ServicePage({ params }: { params: { locale: string, service: string } }) {
+  const mappedTarget = LEGACY_SERVICE_REDIRECTS[params.service];
+  if (mappedTarget) {
+    redirect(`/${params.locale}/${mappedTarget}`);
+  }
+
   const tService = await getTranslations({ locale: params.locale, namespace: 'Services' });
   const tCommon = await getTranslations({ locale: params.locale, namespace: 'Common' });
 

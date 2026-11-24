@@ -19,7 +19,7 @@ export default function MarketerDashboard({ params }: { params: { locale: string
   useEffect(() => {
     if (!loading) {
       if (!user || userData?.role !== 'marketer') {
-        router.push('/');
+        router.push(`/${params.locale}`);
       } else if (userData?.status === 'approved' && userData?.promoCode) {
         fetchStats(userData.promoCode, commissionRate);
       } else {
@@ -45,7 +45,7 @@ export default function MarketerDashboard({ params }: { params: { locale: string
 
   const handleLogout = async () => {
     await signOut(auth);
-    router.push('/');
+    router.push(`/${params.locale}`);
   };
 
   if (loading || !user || userData?.role !== 'marketer') return <div className="min-h-screen flex items-center justify-center">جاري التحميل...</div>;

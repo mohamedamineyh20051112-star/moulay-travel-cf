@@ -3,33 +3,16 @@
 import { useLocale } from "next-intl";
 import { motion } from "framer-motion";
 import { usePathname } from "next/navigation";
-import { useState, useEffect } from "react";
-import { db } from "@/lib/firebase";
-import { doc, getDoc } from "firebase/firestore";
+import { buildWhatsAppUrl, useSiteContact } from "@/lib/useSiteContact";
 
 export default function FloatingWhatsApp() {
   const locale = useLocale();
   const pathname = usePathname() || "";
-  const [whatsappNumber, setWhatsappNumber] = useState<string>("213555536525");
-  
+  const contact = useSiteContact();
+
   // Clean pathname to check if it's an inner page
   const cleanPath = pathname.replace(`/${locale}`, '').replace(/^\//, '');
   const isInnerPage = cleanPath.length > 0;
-
-  useEffect(() => {
-    const fetchSettings = async () => {
-      try {
-        const docRef = doc(db, 'siteSettings', 'global');
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists() && docSnap.data().contact?.whatsapp) {
-          setWhatsappNumber(docSnap.data().contact.whatsapp);
-        }
-      } catch (err) {
-        console.error(err);
-      }
-    };
-    fetchSettings();
-  }, []);
 
   if (isInnerPage) return null;
 
@@ -44,7 +27,7 @@ export default function FloatingWhatsApp() {
       initial={{ opacity: 0, scale: 0.8 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.5, delay: 1 }}
-      href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(waText)}`}
+      href={buildWhatsAppUrl(contact.whatsapp, waText)}
       target="_blank"
       rel="noopener noreferrer"
       className="fixed bottom-6 right-6 md:bottom-10 md:right-10 z-[9999] flex items-center justify-center bg-[#25D366] hover:bg-[#1ebe57] text-white p-4 rounded-full transition-all duration-300 shadow-2xl hover:shadow-[#25D366]/50 hover:-translate-y-1 group"

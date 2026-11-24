@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Building2, Settings, Users, LogOut, Home, Plane, MapPin, ImageIcon, BarChart3, UserCheck, HeartHandshake, LayoutTemplate, Menu, X, Car, Percent, Globe } from 'lucide-react';
+import { Building2, Settings, Users, LogOut, Home, Plane, MapPin, ImageIcon, BarChart3, UserCheck, HeartHandshake, Menu, X, Car, Percent, Globe } from 'lucide-react';
 import { auth, db } from '@/lib/firebase';
 import { signOut } from 'firebase/auth';
 import { collection, getCountFromServer, onSnapshot, query, where } from 'firebase/firestore';
@@ -143,7 +143,7 @@ export default function AdminDashboard({ params }: { params: { locale: string } 
         <div className="pt-4 mt-4 border-t border-gray-100">
           <p className="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">خدمات أخرى</p>
           <Link href={`/${params.locale}/admin/cars`} className="flex items-center gap-3 px-4 py-3 text-gray-600 hover:bg-gray-50 hover:text-primary rounded-xl font-medium transition-colors">
-            <Car className="w-5 h-5" /> السيارات (Nos collection)
+            <Car className="w-5 h-5" /> إدارة السيارات
           </Link>
         </div>
 

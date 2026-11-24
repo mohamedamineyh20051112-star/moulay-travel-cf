@@ -1,21 +1,22 @@
 import { MetadataRoute } from 'next';
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://moulaytravel.com');
+  const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://moulay-travel.pages.dev').replace(/\/$/, '');
   const locales = ['ar', 'fr', 'en'];
   const services = [
-    'flights', 
-    'hotels', 
-    'umrah', 
-    'organized_trips', 
-    'vip', 
-    'visas', 
-    'promotions', 
-    'custom_trips', 
-    'car_rental',
+    'top-destinations',
+    'umrah',
+    'organized_trips',
+    'vip_trips',
+    'hammams',
+    'cars',
+    'discounts',
+    'flights',
+    'hotels',
+    'visas',
+    'custom_trips',
     'insurance',
     'payment',
-    'custom'
   ];
 
   const routes: MetadataRoute.Sitemap = [];

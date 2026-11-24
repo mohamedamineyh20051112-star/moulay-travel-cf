@@ -5,6 +5,7 @@ import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase
 import Link from 'next/link';
 import { ChevronRight, Plus, Pencil, Trash2, Image as ImageIcon } from 'lucide-react';
 import OmraHotelModal from '@/components/admin/OmraHotelModal';
+import { fitPayloadUnder1MB, formatFirestoreError } from '@/lib/smartImageCompress';
 
 export default function OmraHotelsAdmin({ params }: { params: { locale: string } }) {
   const [hotels, setHotels] = useState<any[]>([]);
@@ -32,18 +33,31 @@ export default function OmraHotelsAdmin({ params }: { params: { locale: string }
 
   const handleDelete = async (id: string) => {
     if (confirm('هل أنت متأكد من حذف هذا الفندق نهائياً؟')) {
-      await deleteDoc(doc(db, 'omraHotels', id));
-      fetchHotels();
+      try {
+        await deleteDoc(doc(db, 'omraHotels', id));
+        await fetchHotels();
+      } catch (error: any) {
+        console.error(error);
+        alert('تعذر حذف فندق العمرة: ' + formatFirestoreError(error));
+      }
     }
   };
 
   const handleSaveHotel = async (hotelData: any) => {
-    if (editingHotel) {
-      await updateDoc(doc(db, 'omraHotels', editingHotel.id), hotelData);
-    } else {
-      await addDoc(collection(db, 'omraHotels'), hotelData);
+    try {
+      const cleanData = await fitPayloadUnder1MB(hotelData);
+      if (editingHotel) {
+        await updateDoc(doc(db, 'omraHotels', editingHotel.id), cleanData);
+      } else {
+        await addDoc(collection(db, 'omraHotels'), cleanData);
+      }
+      setIsModalOpen(false);
+      setEditingHotel(null);
+      await fetchHotels();
+    } catch (error: any) {
+      console.error(error);
+      alert('تعذر حفظ فندق العمرة: ' + formatFirestoreError(error));
     }
-    fetchHotels();
   };
 
   const openAddModal = () => {

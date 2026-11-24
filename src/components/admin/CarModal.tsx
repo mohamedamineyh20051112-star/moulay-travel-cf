@@ -7,6 +7,12 @@ import {
 } from '@/data/serviceFeatures';
 import FeaturesToggleEditor from '@/components/admin/FeaturesToggleEditor';
 import { autoTranslateTexts } from '@/lib/translateClient';
+import {
+  compressImageFileToBase64,
+  estimateFirestoreDocBytes,
+  formatDocSizeLabel,
+  MAX_SAFE_DOC_BYTES,
+} from '@/lib/smartImageCompress';
 
 export default function CarModal({ isOpen, onClose, onSave, initialData }: any) {
   const [saving, setSaving] = useState(false);
@@ -250,36 +256,27 @@ export default function CarModal({ isOpen, onClose, onSave, initialData }: any) 
                 <input
                   type="file"
                   accept="image/*"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (!file) return;
-                    const reader = new FileReader();
-                    reader.onload = (event) => {
-                      const img = new Image();
-                      img.onload = () => {
-                        const canvas = document.createElement('canvas');
-                        let width = img.width,
-                          height = img.height;
-                        const maxSize = 1200;
-                        if (width > height && width > maxSize) {
-                          height *= maxSize / width;
-                          width = maxSize;
-                        } else if (height > maxSize) {
-                          width *= maxSize / height;
-                          height = maxSize;
-                        }
-                        canvas.width = width;
-                        canvas.height = height;
-                        const ctx = canvas.getContext('2d');
-                        ctx?.drawImage(img, 0, 0, width, height);
-                        setFormData({
-                          ...formData,
-                          images: [...formData.images, canvas.toDataURL('image/jpeg', 0.75)],
-                        });
-                      };
-                      img.src = (event.target?.result as string) || '';
-                    };
-                    reader.readAsDataURL(file);
+                  multiple
+                  onChange={async (e) => {
+                    const files = Array.from(e.target.files || []);
+                    e.target.value = '';
+                    if (files.length === 0) return;
+                    try {
+                      const compressed = await Promise.all(
+                        files.map((file) =>
+                          compressImageFileToBase64(file, {
+                            maxDimension: 960,
+                            maxBytes: 120_000,
+                          })
+                        )
+                      );
+                      setFormData((prev) => ({
+                        ...prev,
+                        images: [...prev.images, ...compressed],
+                      }));
+                    } catch (err: any) {
+                      alert(err?.message || 'تعذر معالجة إحدى الصور');
+                    }
                   }}
                   className="hidden"
                 />
@@ -305,6 +302,30 @@ export default function CarModal({ isOpen, onClose, onSave, initialData }: any) 
               </div>
             </div>
           </div>
+
+          {(() => {
+            const docBytes = estimateFirestoreDocBytes({
+              ...formData,
+              startingPrice: Number(formData.startingPrice || 0),
+              enabledFeatures,
+              customFeatures,
+            });
+            const isWarning = docBytes > MAX_SAFE_DOC_BYTES * 0.85;
+            return (
+              <div
+                className={`text-xs rounded-xl px-3 py-2 border flex items-center justify-between gap-2 ${
+                  isWarning
+                    ? 'bg-amber-50 border-amber-200 text-amber-800'
+                    : 'bg-gray-50 border-gray-200 text-gray-600'
+                }`}
+              >
+                <span>حجم ملف هذه السيارة (ملف مستقل 1MB في Firestore):</span>
+                <span className="font-mono font-bold" dir="ltr">
+                  {formatDocSizeLabel(docBytes)}
+                </span>
+              </div>
+            );
+          })()}
 
           <button
             type="submit"

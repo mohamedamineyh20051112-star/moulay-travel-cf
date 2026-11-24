@@ -4,6 +4,7 @@ import { db } from '@/lib/firebase';
 import { collection, getDocs, addDoc, deleteDoc, doc } from 'firebase/firestore';
 import Link from 'next/link';
 import { ChevronRight, Plus, Trash2, Star, MessageSquare } from 'lucide-react';
+import { formatFirestoreError } from '@/lib/smartImageCompress';
 
 export default function ReviewsAdmin({ params }: { params: { locale: string } }) {
   const [reviews, setReviews] = useState<any[]>([]);
@@ -55,8 +56,13 @@ export default function ReviewsAdmin({ params }: { params: { locale: string } })
 
   const handleDelete = async (id: string) => {
     if (confirm('هل أنت متأكد من حذف هذا التقييم؟')) {
-      await deleteDoc(doc(db, 'customerReviews', id));
-      fetchReviews();
+      try {
+        await deleteDoc(doc(db, 'customerReviews', id));
+        await fetchReviews();
+      } catch (err: any) {
+        console.error(err);
+        alert('تعذر حذف التقييم: ' + formatFirestoreError(err));
+      }
     }
   };
 

@@ -8,6 +8,7 @@ import {
   filterLocalWorldDestinations,
   searchGlobalCountries,
 } from '@/data/worldDestinations';
+import { compressImageFileToBase64 } from '@/lib/smartImageCompress';
 
 interface DestinationPickerProps {
   destinations: any[];
@@ -84,33 +85,19 @@ export default function DestinationPicker({
     }
   };
 
-  const handleUploadCustomImage = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleUploadCustomImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    e.target.value = '';
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        let width = img.width;
-        let height = img.height;
-        const maxSize = 800;
-        if (width > height && width > maxSize) {
-          height *= maxSize / width;
-          width = maxSize;
-        } else if (height > maxSize) {
-          width *= maxSize / height;
-          height = maxSize;
-        }
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        ctx?.drawImage(img, 0, 0, width, height);
-        onUpdateNewFields({ image: canvas.toDataURL('image/jpeg', 0.75) });
-      };
-      img.src = (event.target?.result as string) || '';
-    };
-    reader.readAsDataURL(file);
+    try {
+      const compressed = await compressImageFileToBase64(file, {
+        maxDimension: 850,
+        maxBytes: 110_000,
+      });
+      onUpdateNewFields({ image: compressed });
+    } catch (err: any) {
+      alert(err?.message || 'تعذر ضغط الصورة');
+    }
   };
 
   return (
