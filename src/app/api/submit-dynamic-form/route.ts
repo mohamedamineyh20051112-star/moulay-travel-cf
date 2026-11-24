@@ -1,10 +1,56 @@
 import { NextResponse } from 'next/server';
 import { cleanEnvValue, EdgeGoogleSheet, getGoogleCredentials } from '@/lib/googleSheetsEdge';
-import { db } from '@/lib/firebase';
-import { collection, addDoc } from 'firebase/firestore';
 import { checkRateLimit, getClientIp, sanitizeText } from '@/lib/security';
 
 export const runtime = 'edge';
+
+async function saveSubmissionToFirestoreRest(
+  formId: string,
+  sanitizedData: Record<string, string>
+): Promise<void> {
+  const projectId = cleanEnvValue(process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID);
+  const apiKey = cleanEnvValue(process.env.NEXT_PUBLIC_FIREBASE_API_KEY);
+  if (!projectId || !apiKey) return;
+
+  const fieldsData: Record<string, { stringValue: string }> = {};
+  for (const [k, v] of Object.entries(sanitizedData)) {
+    fieldsData[k] = { stringValue: String(v) };
+  }
+
+  const url = `https://firestore.googleapis.com/v1/projects/${encodeURIComponent(
+    projectId
+  )}/databases/(default)/documents/form_submissions?key=${encodeURIComponent(apiKey)}`;
+
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      fields: {
+        formId: { stringValue: formId },
+        createdAt: { stringValue: new Date().toISOString() },
+        status: { stringValue: 'new' },
+        data: { mapValue: { fields: fieldsData } },
+      },
+    }),
+  });
+
+  if (!res.ok) {
+    const errText = await res.text().catch(() => '');
+    console.error('Firestore REST save error:', res.status, errText);
+  }
+}
+
+export async function GET() {
+  const creds = getGoogleCredentials();
+  const spreadsheetId = cleanEnvValue(
+    process.env.GOOGLE_SHEET_AUTRES_ID || process.env.GOOGLE_SHEET_ID
+  );
+  return NextResponse.json({
+    ok: true,
+    runtime: 'edge-rest',
+    sheetsConfigured: Boolean(creds && spreadsheetId),
+  });
+}
 
 const SERVICE_TAB_MAP: Record<string, string> = {
   car_rental: 'car',
@@ -73,16 +119,11 @@ export async function POST(req: Request) {
       );
     }
 
-    // 1. Save to Firestore as backup/record
+    // 1. Save to Firestore via Edge REST API (avoids Edge Worker crash from Firebase Web SDK)
     try {
-      await addDoc(collection(db, 'form_submissions'), {
-        formId,
-        data: sanitizedData,
-        createdAt: new Date().toISOString(),
-        status: 'new',
-      });
+      await saveSubmissionToFirestoreRest(formId, sanitizedData);
     } catch (fsErr) {
-      console.error('Firestore save error:', fsErr);
+      console.error('Firestore REST save error:', fsErr);
     }
 
     // 2. Save to Google Sheets via Edge REST API
