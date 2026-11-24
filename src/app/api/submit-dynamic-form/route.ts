@@ -64,6 +64,29 @@ export async function GET(req: Request) {
       });
     }
     const rawKey = cleanEnvValue(process.env.GOOGLE_PRIVATE_KEY);
+    const cleanedB64 = rawKey
+      .replace(/\\\\r\\\\n/g, '\n')
+      .replace(/\\\\n/g, '\n')
+      .replace(/\\r\\n/g, '\n')
+      .replace(/\\n/g, '\n')
+      .replace(/-----BEGIN PRIVATE KEY-----/g, '')
+      .replace(/-----END PRIVATE KEY-----/g, '')
+      .replace(/[^A-Za-z0-9+/=]/g, '');
+    const shaBuf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(cleanedB64));
+    const shaPrefix = Array.from(new Uint8Array(shaBuf).slice(0, 4))
+      .map((b) => b.toString(16).padStart(2, '0'))
+      .join('');
+    let derHexHead = '';
+    let byteLen = 0;
+    try {
+      const bin = atob(cleanedB64);
+      byteLen = bin.length;
+      derHexHead = Array.from({ length: Math.min(8, bin.length) }, (_, i) =>
+        bin.charCodeAt(i).toString(16).padStart(2, '0')
+      ).join('');
+    } catch {
+      derHexHead = 'atob_err';
+    }
     try {
       const sheet = new EdgeGoogleSheet(spreadsheetId, creds.clientEmail, creds.privateKey);
       const headers = await sheet.ensureTab('car', ['Date', 'Service', 'Détails']);
@@ -71,8 +94,9 @@ export async function GET(req: Request) {
         ok: true,
         stage: 'sheets_connected',
         keyLength: rawKey.length,
-        hasBeginMarker: rawKey.includes('BEGIN PRIVATE KEY'),
-        hasEndMarker: rawKey.includes('END PRIVATE KEY'),
+        b64Len: cleanedB64.length,
+        byteLen,
+        shaPrefix,
         headersCount: headers.length,
       });
     } catch (err: any) {
@@ -80,6 +104,10 @@ export async function GET(req: Request) {
         ok: false,
         stage: 'sheets_error',
         keyLength: rawKey.length,
+        b64Len: cleanedB64.length,
+        byteLen,
+        derHexHead,
+        shaPrefix,
         hasBeginMarker: rawKey.includes('BEGIN PRIVATE KEY'),
         hasEndMarker: rawKey.includes('END PRIVATE KEY'),
         errorMessage: String(err?.message || err),
