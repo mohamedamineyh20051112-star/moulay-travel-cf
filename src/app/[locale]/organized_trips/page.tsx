@@ -1,7 +1,6 @@
 'use client';
 import { normalizeDestination } from '@/lib/normalize';
 import { useAutoTranslate } from '@/lib/translateClient';
-import { useCurrencyStore, formatConvertedPrice } from '@/store/useCurrencyStore';
 import { useLocale } from 'next-intl';
 import { motion } from 'framer-motion';
 import { MapPin, Building2, ChevronRight, Compass } from 'lucide-react';
@@ -13,18 +12,15 @@ import { collection, getDocs } from 'firebase/firestore';
 function OrganizedDestinationCard({
   dest,
   count,
-  minPriceDzd,
   locale,
   index,
 }: {
   dest: any;
   count: number;
-  minPriceDzd: number;
   locale: 'ar' | 'fr' | 'en';
   index: number;
 }) {
   const isRtl = locale === 'ar';
-  const { currency, dzdPerEur } = useCurrencyStore();
 
   const displayName = useAutoTranslate(
     dest.nameAr,
@@ -37,7 +33,6 @@ function OrganizedDestinationCard({
     locale === 'en' ? dest.countryEn || dest.countryFr : locale === 'fr' ? dest.countryFr : dest.countryAr
   );
 
-  const effectiveStartPrice = minPriceDzd > 0 ? minPriceDzd : Number(dest.startingPrice || 0);
   const flagSrc = dest.countryCode ? `/flags/${String(dest.countryCode).toLowerCase()}.svg` : null;
 
   return (
@@ -107,17 +102,6 @@ function OrganizedDestinationCard({
               {displayCountry && (
                 <p className="text-gray-200 font-medium text-sm mb-2">{displayCountry}</p>
               )}
-
-              {effectiveStartPrice > 0 && (
-                <div className="inline-flex items-center gap-2 bg-black/45 backdrop-blur-md border border-white/15 rounded-xl px-3.5 py-1.5">
-                  <span className="text-xs text-gray-200">
-                    {locale === 'ar' ? 'ابتداءً من' : locale === 'en' ? 'From' : 'À partir de'}
-                  </span>
-                  <span className="text-gold font-black text-base md:text-lg" dir="ltr">
-                    {formatConvertedPrice(effectiveStartPrice, currency, dzdPerEur, locale, null)}
-                  </span>
-                </div>
-              )}
             </div>
 
             <div className="w-11 h-11 bg-white/20 backdrop-blur-md border border-white/30 rounded-full flex items-center justify-center text-white group-hover:bg-primary group-hover:border-primary transition-all shrink-0">
@@ -136,7 +120,6 @@ export default function OrganizedTripsDestinations() {
 
   const [destinations, setDestinations] = useState<any[]>([]);
   const [hotelsCount, setHotelsCount] = useState<Record<string, number>>({});
-  const [minPrices, setMinPrices] = useState<Record<string, number>>({});
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -156,23 +139,15 @@ export default function OrganizedTripsDestinations() {
       destSnap.docs.forEach((d) => destMap.set(d.id, normalizeDestination(d)));
 
       const counts: Record<string, number> = {};
-      const mins: Record<string, number> = {};
 
       hotelsSnap.docs.forEach((d) => {
         const data = d.data();
         const destId = data.destinationId;
         if (!destId) return;
         counts[destId] = (counts[destId] || 0) + 1;
-        const base = Number(data.price || 0);
-        const disc = Number(data.discountPrice || 0);
-        const eff = disc > 0 && base > disc ? base - disc : base;
-        if (eff > 0 && (!mins[destId] || eff < mins[destId])) {
-          mins[destId] = eff;
-        }
       });
 
       setHotelsCount(counts);
-      setMinPrices(mins);
 
       const visibleDestinations = Array.from(destMap.values()).filter((dest) => counts[dest.id] > 0);
       setDestinations(visibleDestinations);
@@ -238,7 +213,6 @@ export default function OrganizedTripsDestinations() {
                   key={dest.id}
                   dest={dest}
                   count={hotelsCount[dest.id] || 0}
-                  minPriceDzd={minPrices[dest.id] || 0}
                   locale={locale}
                   index={index}
                 />

@@ -5,7 +5,7 @@ import { doc, getDoc } from 'firebase/firestore';
 import { Settings, Calendar, ChevronRight, Phone, ImageIcon, Fuel, Users } from 'lucide-react';
 import DynamicForm from '@/components/DynamicForm';
 import { defaultFormsConfig } from '@/data/defaultForms';
-import { formatConvertedPrice, parseNumericPrice, useCurrencyStore } from '@/store/useCurrencyStore';
+import { convertDzdToEur, formatConvertedPrice, parseNumericPrice, useCurrencyStore } from '@/store/useCurrencyStore';
 import { buildWhatsAppUrl, useSiteContact } from '@/lib/useSiteContact';
 import { resolveItemFeatures } from '@/data/serviceFeatures';
 import FeatureIcon from '@/components/FeatureIcon';
@@ -172,14 +172,26 @@ export default function CarDetailsPage({
                           ? 'Starting from (per day)'
                           : 'À partir de (par jour)'}
                     </p>
-                    {discountDzd > 0 && baseDzd > discountDzd && (
-                      <div className="text-sm text-gray-400 line-through" dir="ltr">
-                        {formatConvertedPrice(baseDzd, currency, dzdPerEur, locale)}
+                    {discountDzd > 0 && baseDzd > discountDzd ? (
+                      <>
+                        <div className="text-sm text-gray-400 line-through" dir="ltr">
+                          {formatConvertedPrice(baseDzd, currency, dzdPerEur, locale)}
+                        </div>
+                        <div className="text-3xl font-black text-emerald-600" dir="ltr">
+                          {formatConvertedPrice(finalDzd, currency, dzdPerEur, locale)}
+                        </div>
+                        {currency === 'DZD' && convertDzdToEur(finalDzd, dzdPerEur) > 0 && (
+                          <div className="text-xs font-bold text-gray-500 flex items-center gap-2" dir="ltr">
+                            <span className="line-through opacity-75">{convertDzdToEur(baseDzd, dzdPerEur)} €</span>
+                            <span className="text-emerald-700 font-black">{convertDzdToEur(finalDzd, dzdPerEur)} €</span>
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <div className="text-3xl font-black text-primary" dir="ltr">
+                        {formatConvertedPrice(finalDzd, currency, dzdPerEur, locale)}
                       </div>
                     )}
-                    <div className="text-3xl font-black text-primary" dir="ltr">
-                      {formatConvertedPrice(finalDzd, currency, dzdPerEur, locale)}
-                    </div>
                   </div>
                 </div>
 

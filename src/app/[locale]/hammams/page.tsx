@@ -1,7 +1,6 @@
 'use client';
 import { normalizeDestination } from '@/lib/normalize';
 import { useAutoTranslate } from '@/lib/translateClient';
-import { useCurrencyStore, formatConvertedPrice } from '@/store/useCurrencyStore';
 import { useLocale } from 'next-intl';
 import { motion } from 'framer-motion';
 import { MapPin, Building2, ChevronRight, Waves } from 'lucide-react';
@@ -13,18 +12,15 @@ import { collection, getDocs } from 'firebase/firestore';
 function HammamDestinationCard({
   dest,
   count,
-  minPriceDzd,
   locale,
   index,
 }: {
   dest: any;
   count: number;
-  minPriceDzd: number;
   locale: 'ar' | 'fr' | 'en';
   index: number;
 }) {
   const isRtl = locale === 'ar';
-  const { currency, dzdPerEur } = useCurrencyStore();
 
   const displayName = useAutoTranslate(
     dest.nameAr,
@@ -37,7 +33,6 @@ function HammamDestinationCard({
     locale === 'en' ? dest.countryEn || dest.countryFr : locale === 'fr' ? dest.countryFr : dest.countryAr
   );
 
-  const effectiveStartPrice = minPriceDzd > 0 ? minPriceDzd : Number(dest.startingPrice || 0);
   const flagSrc = dest.countryCode ? `/flags/${String(dest.countryCode).toLowerCase()}.svg` : null;
 
   return (
@@ -92,14 +87,6 @@ function HammamDestinationCard({
               {displayCountry && (
                 <p className="text-gray-300 font-medium mb-1">{displayCountry}</p>
               )}
-              {effectiveStartPrice > 0 && (
-                <p className="text-gold font-bold text-lg" dir="ltr">
-                  <span className="text-sm font-medium text-white/85 mr-1.5" dir={isRtl ? 'rtl' : 'ltr'}>
-                    {locale === 'ar' ? 'ابتداءً من' : locale === 'en' ? 'From' : 'À partir de'}
-                  </span>
-                  {formatConvertedPrice(effectiveStartPrice, currency, dzdPerEur, locale, null)}
-                </p>
-              )}
             </div>
             <div className="w-10 h-10 bg-white/20 backdrop-blur rounded-full flex items-center justify-center text-white group-hover:bg-primary group-hover:text-white transition-colors shrink-0">
               <ChevronRight className={`w-5 h-5 ${isRtl ? 'rotate-180' : ''}`} />
@@ -117,7 +104,6 @@ export default function HammamsDestinations() {
 
   const [destinations, setDestinations] = useState<any[]>([]);
   const [hotelsCount, setHotelsCount] = useState<Record<string, number>>({});
-  const [minPrices, setMinPrices] = useState<Record<string, number>>({});
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -141,22 +127,14 @@ export default function HammamsDestinations() {
       });
 
       const counts: Record<string, number> = {};
-      const mins: Record<string, number> = {};
       hotelsSnapshot.docs.forEach((doc) => {
         const data = doc.data();
         const destId = data.destinationId;
         if (!destId) return;
         counts[destId] = (counts[destId] || 0) + 1;
-        const base = Number(data.price || 0);
-        const disc = Number(data.discountPrice || 0);
-        const eff = disc > 0 && base > disc ? base - disc : base;
-        if (eff > 0 && (!mins[destId] || eff < mins[destId])) {
-          mins[destId] = eff;
-        }
       });
 
       setHotelsCount(counts);
-      setMinPrices(mins);
 
       const visibleDestinations = Array.from(destsDataMap.values()).filter((dest) => counts[dest.id] > 0);
       setDestinations(visibleDestinations);
@@ -217,7 +195,6 @@ export default function HammamsDestinations() {
                   key={dest.id}
                   dest={dest}
                   count={hotelsCount[dest.id] || 0}
-                  minPriceDzd={minPrices[dest.id] || 0}
                   locale={locale}
                   index={index}
                 />

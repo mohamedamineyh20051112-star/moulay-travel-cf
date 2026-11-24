@@ -3,8 +3,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
-import { collection, getDocs } from "firebase/firestore";
-import { db } from "@/lib/firebase";
 
 const DEFAULT_DESKTOP_BACKGROUNDS = [
   "/hero-desktop.jpg",
@@ -37,8 +35,8 @@ function getNextVisitIndex(storageKey: string, length: number): number {
 }
 
 export default function Hero({ locale }: { locale: string }) {
-  const [desktopImages, setDesktopImages] = useState<string[]>(DEFAULT_DESKTOP_BACKGROUNDS);
-  const [mobileImages, setMobileImages] = useState<string[]>(DEFAULT_MOBILE_BACKGROUNDS);
+  const [desktopImages] = useState<string[]>(DEFAULT_DESKTOP_BACKGROUNDS);
+  const [mobileImages] = useState<string[]>(DEFAULT_MOBILE_BACKGROUNDS);
   const [desktopIdx, setDesktopIdx] = useState<number>(0);
   const [mobileIdx, setMobileIdx] = useState<number>(0);
   const [manualTick, setManualTick] = useState<number>(0);
@@ -47,45 +45,6 @@ export default function Hero({ locale }: { locale: string }) {
   useEffect(() => {
     setDesktopIdx(getNextVisitIndex("moulay_hero_desktop_idx", DEFAULT_DESKTOP_BACKGROUNDS.length));
     setMobileIdx(getNextVisitIndex("moulay_hero_mobile_idx", DEFAULT_MOBILE_BACKGROUNDS.length));
-  }, []);
-
-  // Load any custom hero images uploaded from /admin/hero in Firestore
-  useEffect(() => {
-    let active = true;
-    const loadHeroImages = async () => {
-      try {
-        const snap = await getDocs(collection(db, "heroImages"));
-        if (!active || snap.empty) return;
-
-        const customDesktop: string[] = [];
-        const customMobile: string[] = [];
-
-        snap.docs.forEach((d) => {
-          const data = d.data() as { type?: string; imageBase64?: string; imageUrl?: string };
-          const src = data.imageBase64 || data.imageUrl;
-          if (!src) return;
-          if (data.type === "desktop") customDesktop.push(src);
-          if (data.type === "mobile") customMobile.push(src);
-        });
-
-        if (customDesktop.length > 0) {
-          const merged = Array.from(new Set([...customDesktop, ...DEFAULT_DESKTOP_BACKGROUNDS]));
-          setDesktopImages(merged);
-          setDesktopIdx((prev) => prev % merged.length);
-        }
-        if (customMobile.length > 0) {
-          const merged = Array.from(new Set([...customMobile, ...DEFAULT_MOBILE_BACKGROUNDS]));
-          setMobileImages(merged);
-          setMobileIdx((prev) => prev % merged.length);
-        }
-      } catch (err) {
-        console.error("Failed to fetch custom hero images:", err);
-      }
-    };
-    loadHeroImages();
-    return () => {
-      active = false;
-    };
   }, []);
 
   // Gentle automatic slideshow every 9 seconds (resets after manual tap)

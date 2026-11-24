@@ -3,7 +3,8 @@
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { defaultFormsConfig } from '@/data/defaultForms';
-import { CheckCircle, Info, Settings, LayoutTemplate } from 'lucide-react';
+import { CheckCircle, Info, Settings, LayoutTemplate, ChevronRight } from 'lucide-react';
+import Link from 'next/link';
 
 export default function AdminFormsPage({ params: { locale } }: { params: { locale: string } }) {
   const [activeForm, setActiveForm] = useState<string>('visas');
@@ -13,6 +14,16 @@ export default function AdminFormsPage({ params: { locale } }: { params: { local
 
   return (
     <div className="p-6 md:p-8 max-w-7xl mx-auto" dir={locale === 'ar' ? 'rtl' : 'ltr'}>
+      <div className="flex items-center gap-2 text-sm text-gray-500 mb-6">
+        <Link href={`/${locale}/admin`} className="hover:text-primary transition-colors">
+          {locale === 'ar' ? 'لوحة التحكم' : 'Dashboard'}
+        </Link>
+        <ChevronRight className="w-4 h-4 rtl:rotate-180" />
+        <span className="text-gray-900 font-medium">
+          {locale === 'ar' ? 'منشئ النماذج' : 'Formulaires'}
+        </span>
+      </div>
+
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-3xl font-bold text-gray-800 flex items-center gap-3">

@@ -248,10 +248,13 @@ export default function OmraHotelModal({ isOpen, onClose, onSave, initialData }:
         en: (c.en || '').trim() || custEn[i] || c.fr || c.ar || '',
       }));
 
+      const derivedHasTransport = enabledFeatures.includes('transport');
+      const derivedHasFood = enabledFeatures.includes('food_included');
+
       const includesAr = ['تأشيرة (Visa)'];
       const includesFr = ['Visa'];
       const includesEn = ['Visa'];
-      if (hasTransport) {
+      if (derivedHasTransport) {
         includesAr.push('النقل');
         includesFr.push('Transport');
         includesEn.push('Transport');
@@ -272,7 +275,7 @@ export default function OmraHotelModal({ isOpen, onClose, onSave, initialData }:
         image: imageMain,
         images: { rooms: imageRooms, restaurant: imageRestaurant, services: imageServices },
         stars: Number(stars),
-        transportAvailable: hasTransport,
+        transportAvailable: derivedHasTransport,
         shuttleAvailable,
         shuttleSchedule: { ar: shuttleScheduleAr, fr: finalShuttleFr, en: finalShuttleEn },
         makkahHotel: { ar: makkahHotelAr, fr: finalMakkahFr, en: finalMakkahEn },
@@ -288,8 +291,9 @@ export default function OmraHotelModal({ isOpen, onClose, onSave, initialData }:
         ziyarat: cleanZiyarat,
         program: cleanProgram,
         schedule: schedules,
-        food: hasFood ? { type: { ar: foodTypeAr, fr: finalFoodFr, en: finalFoodEn }, price: 'مشمول / Inclus' } : null,
+        food: derivedHasFood ? { type: { ar: foodTypeAr, fr: finalFoodFr, en: finalFoodEn }, price: 'مشمول / Inclus' } : null,
         includes: { ar: includesAr, fr: includesFr, en: includesEn },
+        featuresConfigured: true,
         enabledFeatures,
         customFeatures: cleanCustomFeatures,
       };
@@ -534,29 +538,32 @@ export default function OmraHotelModal({ isOpen, onClose, onSave, initialData }:
                 </div>
 
                 <div className="pt-6 border-t space-y-4">
-                  <h3 className="font-bold">خدمات إضافية (الإطعام والنقل)</h3>
-                  <label className="flex items-center gap-2 cursor-pointer p-3 border rounded-xl hover:bg-gray-50">
-                    <input type="checkbox" checked={hasFood} onChange={(e) => setHasFood(e.target.checked)} className="w-5 h-5 text-primary" />
-                    <span className="font-medium">الإطعام متوفر في هذا الفندق؟</span>
-                  </label>
-                  {hasFood && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pr-2">
+                  <FeaturesToggleEditor
+                    category="omra"
+                    enabledFeatures={enabledFeatures}
+                    customFeatures={customFeatures}
+                    onChangeEnabled={(ids) => {
+                      setEnabledFeatures(ids);
+                      setHasFood(ids.includes('food_included'));
+                      setHasTransport(ids.includes('transport'));
+                    }}
+                    onChangeCustom={setCustomFeatures}
+                  />
+
+                  {enabledFeatures.includes('food_included') && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-50 p-4 rounded-xl border border-gray-200">
                       <div>
-                        <label className="block text-sm mb-1">نوع الإطعام (عربي)</label>
-                        <input value={foodTypeAr} onChange={(e) => setFoodTypeAr(e.target.value)} className="w-full border rounded-lg p-2" />
+                        <label className="block text-sm font-medium mb-1">تفاصيل الإطعام (عربي - اختياري)</label>
+                        <input value={foodTypeAr} onChange={(e) => setFoodTypeAr(e.target.value)} className="w-full border rounded-lg p-2 bg-white" />
                       </div>
                       <div>
-                        <label className="block text-sm mb-1">نوع الإطعام (فرنسي)</label>
-                        <input value={foodTypeFr} onChange={(e) => setFoodTypeFr(e.target.value)} className="w-full border rounded-lg p-2" dir="ltr" />
+                        <label className="block text-sm font-medium mb-1">تفاصيل الإطعام (فرنسي - اختياري)</label>
+                        <input value={foodTypeFr} onChange={(e) => setFoodTypeFr(e.target.value)} className="w-full border rounded-lg p-2 bg-white" dir="ltr" />
                       </div>
                     </div>
                   )}
 
-                  <label className="flex items-center gap-2 cursor-pointer p-3 border rounded-xl hover:bg-gray-50">
-                    <input type="checkbox" checked={hasTransport} onChange={(e) => setHasTransport(e.target.checked)} className="w-5 h-5 text-primary" />
-                    <span className="font-medium">توفير خدمات النقل (Transport)</span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer p-3 border rounded-xl hover:bg-gray-50 mt-4">
+                  <label className="flex items-center gap-2 cursor-pointer p-3 border rounded-xl hover:bg-gray-50 mt-2">
                     <input type="checkbox" checked={shuttleAvailable} onChange={(e) => setShuttleAvailable(e.target.checked)} className="w-5 h-5 text-primary" />
                     <span className="font-medium">النقل الترددي متوفر (Shuttle Available)</span>
                   </label>
@@ -573,16 +580,6 @@ export default function OmraHotelModal({ isOpen, onClose, onSave, initialData }:
                       </div>
                     </div>
                   )}
-                </div>
-
-                <div className="pt-6 border-t">
-                  <FeaturesToggleEditor
-                    category="omra"
-                    enabledFeatures={enabledFeatures}
-                    customFeatures={customFeatures}
-                    onChangeEnabled={setEnabledFeatures}
-                    onChangeCustom={setCustomFeatures}
-                  />
                 </div>
               </div>
             )}

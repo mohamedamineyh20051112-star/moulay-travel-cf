@@ -4,12 +4,12 @@ import { collection, getDocs, addDoc } from 'firebase/firestore';
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Star, MapPin, Calendar, Home, Tag, ChevronLeft, Heart, 
-  Info, Coffee, Bus, Camera, CheckCircle, Phone, ArrowLeft, 
+  Info, Bus, Camera, CheckCircle, Phone, ArrowLeft, 
   Send, FileText, CreditCard, HeartPulse, Car, Users, BedDouble, Utensils, User, Mail,
   Sparkles, X
 } from "lucide-react";
 
-import { useCurrencyStore, formatConvertedPrice } from "@/store/useCurrencyStore";
+import { useCurrencyStore, formatConvertedPrice, convertDzdToEur } from "@/store/useCurrencyStore";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSiteContact, buildWhatsAppUrl } from "@/lib/useSiteContact";
 import { useAutoTranslate } from "@/lib/translateClient";
@@ -497,22 +497,52 @@ export default function OmraBookingForm({ locale }: { locale: string }) {
               })()}
 
               {/* Price Footer */}
-              <div className="mt-auto bg-[#b38b36] rounded-[2rem] p-1.5 flex items-center justify-between text-white shadow-md hover:bg-[#a37d2f] transition-colors group-hover:scale-[1.02] transform origin-center duration-300">
-                <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center shrink-0 ml-1">
-                  <Tag className="w-5 h-5 text-white" />
-                </div>
-                <div className="flex items-center justify-center flex-1 gap-2 border-l border-r border-white/20 mx-2 px-2">
-                  <span className="text-sm font-medium text-white/90">
-                    {isRtl ? 'ابتداءً من :' : locale === 'en' ? 'Starting from :' : 'À partir de :'}
-                  </span>
-                  <span className="text-xl sm:text-2xl font-bold" dir="ltr">
-                    {getPrice(hotel.priceStartDzd)}
-                  </span>
-                </div>
-                <div className="w-10 h-10 flex items-center justify-center shrink-0 mr-1">
-                  <ChevronLeft className={`w-6 h-6 ${!isRtl ? 'rotate-180' : ''}`} />
-                </div>
-              </div>
+              {(() => {
+                const baseDzd = Number(hotel.priceStartDzd || 0);
+                const discDzd = Number(hotel.discountPrice || 0);
+                const hasDisc = discDzd > 0 && baseDzd > discDzd;
+                const finalDzd = hasDisc ? baseDzd - discDzd : baseDzd;
+                const baseEur = convertDzdToEur(baseDzd, dzdPerEur);
+                const finalEur = convertDzdToEur(finalDzd, dzdPerEur);
+                return (
+                  <div className="mt-auto bg-[#b38b36] rounded-[2rem] p-1.5 flex items-center justify-between text-white shadow-md hover:bg-[#a37d2f] transition-colors group-hover:scale-[1.02] transform origin-center duration-300">
+                    <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center shrink-0 ml-1">
+                      <Tag className="w-5 h-5 text-white" />
+                    </div>
+                    <div className="flex flex-col items-center justify-center flex-1 border-l border-r border-white/20 mx-2 px-2 py-0.5">
+                      <div className="flex items-center gap-1.5 flex-wrap justify-center">
+                        {hasDisc && (
+                          <span className="bg-red-600 text-white text-[10px] font-black px-2 py-0.5 rounded-full">
+                            {isRtl ? 'تخفيض' : 'PROMO'}
+                          </span>
+                        )}
+                        <span className="text-xs sm:text-sm font-medium text-white/90">
+                          {isRtl ? 'ابتداءً من :' : locale === 'en' ? 'Starting from :' : 'À partir de :'}
+                        </span>
+                      </div>
+                      <div className="flex items-baseline gap-2 flex-wrap justify-center" dir="ltr">
+                        {hasDisc && (
+                          <span className="text-xs sm:text-sm text-white/75 line-through font-medium">
+                            {getPrice(baseDzd)}
+                          </span>
+                        )}
+                        <span className="text-xl sm:text-2xl font-bold">
+                          {getPrice(finalDzd)}
+                        </span>
+                      </div>
+                      {hasDisc && currency === 'DZD' && finalEur > 0 && (
+                        <div className="text-[11px] text-white/90 flex items-center gap-1.5 font-bold" dir="ltr">
+                          {baseEur > 0 && <span className="line-through opacity-75">{baseEur} €</span>}
+                          <span>{finalEur} €</span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="w-10 h-10 flex items-center justify-center shrink-0 mr-1">
+                      <ChevronLeft className={`w-6 h-6 ${!isRtl ? 'rotate-180' : ''}`} />
+                    </div>
+                  </div>
+                );
+              })()}
             </motion.div>
           ))}
         </div>
@@ -670,6 +700,48 @@ export default function OmraBookingForm({ locale }: { locale: string }) {
             </div>
           )}
 
+          {/* Discount / Starting Price Banner */}
+          {(() => {
+            const baseDzd = Number(selectedHotel.priceStartDzd || 0);
+            const discDzd = Number(selectedHotel.discountPrice || 0);
+            const hasDisc = discDzd > 0 && baseDzd > discDzd;
+            const finalDzd = hasDisc ? baseDzd - discDzd : baseDzd;
+            if (baseDzd <= 0) return null;
+            const baseEur = convertDzdToEur(baseDzd, dzdPerEur);
+            const finalEur = convertDzdToEur(finalDzd, dzdPerEur);
+            return (
+              <div className="bg-white p-4 sm:p-5 rounded-2xl border border-gold/25 shadow-sm flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <Tag className="w-5 h-5 text-gold" />
+                  <span className="font-bold text-primary">
+                    {isRtl ? 'ابتداءً من' : locale === 'en' ? 'Starting from' : 'À partir de'}
+                  </span>
+                  {hasDisc && (
+                    <span className="bg-red-600 text-white text-xs font-black px-2.5 py-0.5 rounded-full">
+                      {isRtl ? 'تخفيض' : 'PROMO'}
+                    </span>
+                  )}
+                </div>
+                <div className="flex flex-wrap items-baseline gap-2.5" dir="ltr">
+                  {hasDisc && (
+                    <span className="text-sm text-gray-400 line-through font-semibold">
+                      {getPrice(baseDzd)}
+                    </span>
+                  )}
+                  <span className={`text-2xl font-black ${hasDisc ? 'text-emerald-600' : 'text-primary'}`}>
+                    {getPrice(finalDzd)}
+                  </span>
+                  {currency === 'DZD' && finalEur > 0 && (
+                    <span className="text-xs font-bold text-gray-500">
+                      ({hasDisc && baseEur > 0 && <span className="line-through mr-1">{baseEur} €</span>}
+                      <span className={hasDisc ? 'text-emerald-700 font-black' : ''}>{finalEur} €</span>)
+                    </span>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
+
           {/* Pricing Table (Auto-calculated EUR from DZD) */}
           <div>
             <h3 className="text-xl font-bold text-primary mb-4 text-center flex items-center justify-center gap-2">
@@ -698,59 +770,6 @@ export default function OmraBookingForm({ locale }: { locale: string }) {
                   ))}
                 </tbody>
               </table>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Transport */}
-            <div className="bg-white p-6 rounded-2xl border border-gold/20 shadow-sm">
-              <h4 className="text-primary font-bold mb-4 flex items-center gap-2">
-                <Bus className="w-5 h-5 text-gold" /> {isRtl ? 'خدمة النقل' : 'Transport'}
-              </h4>
-              {(() => {
-                 const ta = selectedHotel.transportAvailable;
-                 let isAvailable = true;
-                 if (ta === true || ta === 'true') isAvailable = true;
-                 else if (ta === false || ta === 'false') isAvailable = false;
-                 else if (selectedHotel.includes?.ar?.includes('النقل') || selectedHotel.includes?.fr?.includes('Transport')) isAvailable = true;
-                 else isAvailable = Boolean(ta);
-                 
-                 return isAvailable ? (
-                    <div className="flex items-start gap-4">
-                      <div className="bg-green-100 p-2 rounded-full text-green-600"><CheckCircle className="w-5 h-5"/></div>
-                      <div>
-                        <p className="font-bold text-gray-800">{isRtl ? 'موجودة' : 'Inclus'}</p>
-                        <p className="text-sm text-gray-500 mt-1">{isRtl ? 'نقل من وإلى المطار والفندق' : 'Transfert aéroport-hôtel-aéroport'}</p>
-                      </div>
-                    </div>
-                 ) : (
-                    <div className="flex items-start gap-4">
-                      <div className="bg-gray-100 p-2 rounded-full text-gray-500"><Bus className="w-5 h-5 opacity-50"/></div>
-                      <div>
-                        <p className="font-bold text-gray-600">{isRtl ? 'غير متوفر' : 'Non disponible'}</p>
-                        <p className="text-sm text-gray-500 mt-1">{isRtl ? 'هذا العرض لا يشمل النقل' : 'Ce forfait n\'inclut pas le transport'}</p>
-                      </div>
-                    </div>
-                 );
-              })()}
-            </div>
-
-            {/* Food */}
-            <div className="bg-white p-6 rounded-2xl border border-gold/20 shadow-sm">
-              <h4 className="text-primary font-bold mb-4 flex items-center gap-2">
-                <Utensils className="w-5 h-5 text-gold" /> {isRtl ? 'الإطعام' : 'Restauration'}
-              </h4>
-              {selectedHotel.food ? (
-                <div className="flex items-start gap-4">
-                  <div className="bg-gold/10 p-2 rounded-full text-gold"><Coffee className="w-5 h-5"/></div>
-                  <div>
-                    <p className="font-bold text-gray-800"><OmraLocalized value={selectedHotel.food.type} locale={locale} /></p>
-                    <p className="text-sm text-gray-500 mt-1">{selectedHotel.food.price} {selectedHotel.food.price !== 'Inclus' && !String(selectedHotel.food.price).includes('مشمول') && (isRtl ? 'دج/يوم' : 'DA/jour')}</p>
-                  </div>
-                </div>
-              ) : (
-                <p className="text-gray-500">{isRtl ? 'غير متوفر' : locale === 'en' ? 'Not available' : 'Non disponible'}</p>
-              )}
             </div>
           </div>
 

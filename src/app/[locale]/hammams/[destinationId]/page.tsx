@@ -18,7 +18,7 @@ import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { db } from '@/lib/firebase';
 import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
-import { formatConvertedPrice, useCurrencyStore } from '@/store/useCurrencyStore';
+import { convertDzdToEur, formatConvertedPrice, useCurrencyStore } from '@/store/useCurrencyStore';
 
 function HammamCard({
   hotel,
@@ -58,10 +58,12 @@ function HammamCard({
 
   const wilaya = hotel.state || destLabel;
   const commune = hotel.municipality || hotel.area || '';
-  const finalDzd =
-    hotel.discountPrice && Number(hotel.price) > Number(hotel.discountPrice)
-      ? Number(hotel.price) - Number(hotel.discountPrice)
-      : Number(hotel.price || 0);
+  const basePrice = Number(hotel.price || 0);
+  const discount = Number(hotel.discountPrice || 0);
+  const hasDiscount = discount > 0 && basePrice > discount;
+  const finalDzd = hasDiscount ? basePrice - discount : basePrice;
+  const baseEur = convertDzdToEur(basePrice, dzdPerEur);
+  const finalEur = convertDzdToEur(finalDzd, dzdPerEur);
 
   const resolvedFeatures = resolveItemFeatures('hammams', hotel, locale);
   const servicesSummary = resolvedFeatures.slice(0, 3).map((f) => f.label);
@@ -189,11 +191,24 @@ function HammamCard({
         <div className="bg-[#b8892d] w-10 h-10 rounded-full flex items-center justify-center shrink-0">
           <Coins className="w-5 h-5 text-white" />
         </div>
-        <div className="flex items-center gap-1.5 text-sm sm:text-base font-black text-[#2b1808]">
-          <span>{isRtl ? 'ابتداءً من' : locale === 'en' ? 'From' : 'À partir de'} :</span>
-          <span className="text-[#9e701c]" dir="ltr">
-            {formatConvertedPrice(finalDzd, currency, dzdPerEur, locale, null)}
-          </span>
+        <div className="flex flex-col items-center text-sm sm:text-base font-black text-[#2b1808] px-2">
+          <div className="flex items-center gap-1.5 flex-wrap justify-center">
+            <span>{isRtl ? 'ابتداءً من' : locale === 'en' ? 'From' : 'À partir de'} :</span>
+            {hasDiscount && (
+              <span className="text-xs text-gray-400 line-through font-semibold" dir="ltr">
+                {formatConvertedPrice(basePrice, currency, dzdPerEur, locale, null)}
+              </span>
+            )}
+            <span className={hasDiscount ? 'text-emerald-700' : 'text-[#9e701c]'} dir="ltr">
+              {formatConvertedPrice(finalDzd, currency, dzdPerEur, locale, null)}
+            </span>
+          </div>
+          {hasDiscount && currency === 'DZD' && finalEur > 0 && (
+            <div className="text-[11px] font-bold text-gray-500 flex items-center gap-1.5" dir="ltr">
+              {baseEur > 0 && <span className="line-through opacity-75">{baseEur} €</span>}
+              <span className="text-emerald-700 font-black">{finalEur} €</span>
+            </div>
+          )}
         </div>
         <ChevronRight className={`w-5 h-5 text-[#b8892d] shrink-0 ${isRtl ? 'rotate-180' : ''}`} />
       </Link>

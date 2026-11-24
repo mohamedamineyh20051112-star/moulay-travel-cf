@@ -2,7 +2,8 @@
 import { useState, useEffect } from 'react';
 import { db } from '@/lib/firebase';
 import { collection, getDocs, updateDoc, doc } from 'firebase/firestore';
-import { Percent, Car, Building2, MapPin, Search, Crown } from 'lucide-react';
+import { Percent, Car, Building2, MapPin, Search, Crown, ChevronRight } from 'lucide-react';
+import Link from 'next/link';
 import { useCurrencyStore, convertDzdToEur } from '@/store/useCurrencyStore';
 
 function getItemBasePrice(item: any): number {
@@ -28,7 +29,8 @@ function getItemThumb(item: any): string | null {
   return images.length > 0 ? images[0] : null;
 }
 
-export default function DiscountsAdminPage() {
+export default function DiscountsAdminPage({ params }: { params?: { locale?: string } }) {
+  const locale = params?.locale || 'ar';
   const { dzdPerEur } = useCurrencyStore();
   const [items, setItems] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -148,6 +150,14 @@ export default function DiscountsAdminPage() {
 
   return (
     <div className="p-6 md:p-8 max-w-7xl mx-auto text-gray-900" dir="rtl">
+      <div className="flex items-center gap-2 text-sm text-gray-500 mb-6">
+        <Link href={`/${locale}/admin`} className="hover:text-primary transition-colors">
+          لوحة التحكم
+        </Link>
+        <ChevronRight className="w-4 h-4 rtl:rotate-180" />
+        <span className="text-gray-900 font-medium">التخفيضات والتقسيط</span>
+      </div>
+
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
         <div>
           <h1 className="text-3xl font-black text-gray-900 mb-2">إدارة التخفيضات والتقسيط</h1>

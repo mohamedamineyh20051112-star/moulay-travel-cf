@@ -7,7 +7,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   MapPin,
   Calendar,
-  CheckCircle,
   Phone,
   ArrowLeft,
   Camera,
@@ -15,7 +14,6 @@ import {
   Info,
   BedDouble,
   ChevronLeft,
-  Bus,
   Heart,
   Star,
   Clock,
@@ -118,15 +116,6 @@ export default function OrganizedTripsHotelDetails({
       : locale === 'fr'
         ? hotel?.descriptionFr
         : hotel?.descriptionAr
-  );
-  const foodTypeText = useAutoTranslate(
-    hotel?.foodTypeAr,
-    locale,
-    locale === 'en'
-      ? hotel?.foodTypeEn || hotel?.foodTypeFr
-      : locale === 'fr'
-        ? hotel?.foodTypeFr
-        : hotel?.foodTypeAr
   );
 
   if (isLoading) {
@@ -350,13 +339,24 @@ export default function OrganizedTripsHotelDetails({
               {effectivePriceDzd > 0 && (
                 <>
                   <div className="w-px h-6 bg-gray-200 hidden sm:block" />
-                  <div className="flex items-center gap-2 text-primary font-black text-lg" dir="ltr">
+                  <div className="flex flex-wrap items-center gap-2 text-primary font-black text-lg" dir="ltr">
                     <span className="text-xs font-semibold text-gray-500" dir={isRtl ? 'rtl' : 'ltr'}>
                       {isRtl ? 'ابتداءً من:' : locale === 'en' ? 'From:' : 'À partir de:'}
                     </span>
-                    <span>
+                    {discount > 0 && basePrice > discount && (
+                      <span className="text-xs text-gray-400 line-through font-semibold">
+                        {formatConvertedPrice(basePrice, currency, dzdPerEur, locale, null)}
+                      </span>
+                    )}
+                    <span className={discount > 0 && basePrice > discount ? 'text-emerald-600' : ''}>
                       {formatConvertedPrice(effectivePriceDzd, currency, dzdPerEur, locale, null)}
                     </span>
+                    {discount > 0 && basePrice > discount && currency === 'DZD' && convertDzdToEur(effectivePriceDzd, dzdPerEur) > 0 && (
+                      <span className="text-xs text-gray-500 font-bold">
+                        ({convertDzdToEur(basePrice, dzdPerEur) > 0 && <span className="line-through opacity-75 mr-1">{convertDzdToEur(basePrice, dzdPerEur)} €</span>}
+                        <span className="text-emerald-700">{convertDzdToEur(effectivePriceDzd, dzdPerEur)} €</span>)
+                      </span>
+                    )}
                   </div>
                 </>
               )}
@@ -506,49 +506,6 @@ export default function OrganizedTripsHotelDetails({
                 </div>
               </div>
             )}
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-white p-6 rounded-2xl border border-gold/20 shadow-sm">
-                <h4 className="text-primary font-bold mb-4 flex items-center gap-2">
-                  <Bus className="w-5 h-5 text-gold" /> {isRtl ? 'خدمة النقل' : 'Transport'}
-                </h4>
-                {hotel.hasTransport ? (
-                  <div className="flex items-start gap-4">
-                    <div className="bg-green-100 p-2 rounded-full text-green-600">
-                      <CheckCircle className="w-5 h-5" />
-                    </div>
-                    <p className="font-bold text-gray-800 pt-1">
-                      {isRtl ? 'متوفر' : locale === 'en' ? 'Included' : 'Inclus'}
-                    </p>
-                  </div>
-                ) : (
-                  <p className="text-gray-500">
-                    {isRtl ? 'غير متوفر' : locale === 'en' ? 'Not available' : 'Non disponible'}
-                  </p>
-                )}
-              </div>
-
-              <div className="bg-white p-6 rounded-2xl border border-gold/20 shadow-sm">
-                <h4 className="text-primary font-bold mb-4 flex items-center gap-2">
-                  <Utensils className="w-5 h-5 text-gold" />{' '}
-                  {isRtl ? 'الإطعام' : locale === 'en' ? 'Catering' : 'Restauration'}
-                </h4>
-                {hotel.hasFood ? (
-                  <div className="flex items-start gap-4">
-                    <div className="bg-gold/10 p-2 rounded-full text-gold">
-                      <Utensils className="w-5 h-5" />
-                    </div>
-                    <p className="font-bold text-gray-800 pt-1">
-                      {foodTypeText || (isRtl ? 'متوفر' : locale === 'en' ? 'Included' : 'Inclus')}
-                    </p>
-                  </div>
-                ) : (
-                  <p className="text-gray-500">
-                    {isRtl ? 'غير متوفر' : locale === 'en' ? 'Not available' : 'Non disponible'}
-                  </p>
-                )}
-              </div>
-            </div>
 
             {/* Program */}
             {Array.isArray(hotel.program) && hotel.program.length > 0 && (

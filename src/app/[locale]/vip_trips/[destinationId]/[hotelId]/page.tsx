@@ -7,7 +7,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   MapPin,
   Calendar,
-  CheckCircle,
   Phone,
   ArrowLeft,
   Camera,
@@ -15,7 +14,6 @@ import {
   Info,
   BedDouble,
   ChevronLeft,
-  Bus,
   Heart,
   Star,
   Crown,
@@ -125,15 +123,6 @@ export default function VIPTripsHotelDetails({
       : locale === 'fr'
         ? hotel?.descriptionFr
         : hotel?.descriptionAr
-  );
-  const foodTypeText = useAutoTranslate(
-    hotel?.foodTypeAr,
-    locale,
-    locale === 'en'
-      ? hotel?.foodTypeEn || hotel?.foodTypeFr
-      : locale === 'fr'
-        ? hotel?.foodTypeFr
-        : hotel?.foodTypeAr
   );
 
   if (isLoading) {
@@ -365,13 +354,24 @@ export default function VIPTripsHotelDetails({
               {effectivePriceDzd > 0 && (
                 <>
                   <div className="w-px h-5 bg-white/15 hidden sm:block" />
-                  <div className="flex items-center gap-2 text-amber-300 font-black text-lg" dir="ltr">
+                  <div className="flex flex-wrap items-center gap-2 text-amber-300 font-black text-lg" dir="ltr">
                     <span className="text-xs font-semibold text-gray-300" dir={isRtl ? 'rtl' : 'ltr'}>
                       {isRtl ? 'ابتداءً من:' : locale === 'en' ? 'From:' : 'À partir de:'}
                     </span>
+                    {discount > 0 && basePrice > discount && (
+                      <span className="text-xs text-gray-400 line-through font-semibold">
+                        {formatConvertedPrice(basePrice, currency, dzdPerEur, locale, null)}
+                      </span>
+                    )}
                     <span>
                       {formatConvertedPrice(effectivePriceDzd, currency, dzdPerEur, locale, null)}
                     </span>
+                    {discount > 0 && basePrice > discount && currency === 'DZD' && convertDzdToEur(effectivePriceDzd, dzdPerEur) > 0 && (
+                      <span className="text-xs text-amber-100/80 font-bold">
+                        ({convertDzdToEur(basePrice, dzdPerEur) > 0 && <span className="line-through opacity-75 mr-1">{convertDzdToEur(basePrice, dzdPerEur)} €</span>}
+                        <span className="text-amber-300">{convertDzdToEur(effectivePriceDzd, dzdPerEur)} €</span>)
+                      </span>
+                    )}
                   </div>
                 </>
               )}
@@ -422,9 +422,9 @@ export default function VIPTripsHotelDetails({
               </div>
             )}
 
-            {/* Category Sub-Gallery Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              {[
+            {/* Category Sub-Gallery Cards (render only categories with uploaded photos) */}
+            {(() => {
+              const subGalleryTiles = [
                 {
                   title: isRtl ? 'الأجنحة والغرف' : locale === 'en' ? 'Suites & Rooms' : 'Suites & Chambres',
                   icon: BedDouble,
@@ -438,37 +438,45 @@ export default function VIPTripsHotelDetails({
                 {
                   title: isRtl ? 'مرافق المنتجع' : locale === 'en' ? 'Resort & Views' : 'Plus de photos',
                   icon: Camera,
-                  img: hotel.images?.[1] || hotel.images?.[0],
+                  img: hotel.images?.[1],
                 },
-              ].map((tile, idx) => {
-                const Icon = tile.icon;
-                return (
-                  <div
-                    key={idx}
-                    onClick={() => tile.img && setLightboxImg(tile.img)}
-                    className="rounded-2xl overflow-hidden border border-amber-400/20 bg-white/[0.03] cursor-pointer group"
-                  >
-                    <div className="h-36 bg-[#181d2b] overflow-hidden relative">
-                      {tile.img ? (
-                        <img
-                          src={tile.img}
-                          alt={tile.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-white/20">
-                          <Camera className="w-8 h-8" />
+              ].filter((tile) => Boolean(tile.img));
+
+              if (subGalleryTiles.length === 0) return null;
+              const colsClass =
+                subGalleryTiles.length === 1
+                  ? 'grid-cols-1 max-w-md mx-auto'
+                  : subGalleryTiles.length === 2
+                    ? 'grid-cols-1 sm:grid-cols-2'
+                    : 'grid-cols-1 sm:grid-cols-3';
+
+              return (
+                <div className={`grid ${colsClass} gap-4`}>
+                  {subGalleryTiles.map((tile, idx) => {
+                    const Icon = tile.icon;
+                    return (
+                      <div
+                        key={idx}
+                        onClick={() => tile.img && setLightboxImg(tile.img)}
+                        className="rounded-2xl overflow-hidden border border-amber-400/20 bg-white/[0.03] cursor-pointer group"
+                      >
+                        <div className="h-36 bg-[#181d2b] overflow-hidden relative">
+                          <img
+                            src={tile.img}
+                            alt={tile.title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          />
                         </div>
-                      )}
-                    </div>
-                    <div className="py-2.5 px-3 text-center text-xs font-bold text-amber-200 flex items-center justify-center gap-1.5">
-                      <Icon className="w-4 h-4 text-amber-300" />
-                      {tile.title}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+                        <div className="py-2.5 px-3 text-center text-xs font-bold text-amber-200 flex items-center justify-center gap-1.5">
+                          <Icon className="w-4 h-4 text-amber-300" />
+                          {tile.title}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
 
             {/* Pricing Table (Auto-calculated EUR from DZD) */}
             {roomList.length > 0 && (
@@ -530,48 +538,6 @@ export default function VIPTripsHotelDetails({
                 </div>
               </div>
             )}
-
-            {/* Transport & Food Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              <div className="bg-white/[0.04] p-6 rounded-2xl border border-white/10">
-                <h4 className="text-amber-300 font-bold mb-3 flex items-center gap-2">
-                  <Bus className="w-5 h-5" />
-                  {isRtl ? 'خدمة النقل الخاص' : locale === 'en' ? 'Private Transfer' : 'Transport VIP'}
-                </h4>
-                {hotel.hasTransport ? (
-                  <div className="flex items-center gap-3 text-gray-100 font-bold">
-                    <CheckCircle className="w-5 h-5 text-emerald-400" />
-                    <span>
-                      {isRtl
-                        ? 'مشمول طوال فترة الرحلة'
-                        : locale === 'en'
-                          ? 'Included'
-                          : 'Inclus'}
-                    </span>
-                  </div>
-                ) : (
-                  <p className="text-gray-400">
-                    {isRtl ? 'حسب الطلب' : locale === 'en' ? 'On request' : 'Sur demande'}
-                  </p>
-                )}
-              </div>
-
-              <div className="bg-white/[0.04] p-6 rounded-2xl border border-white/10">
-                <h4 className="text-amber-300 font-bold mb-3 flex items-center gap-2">
-                  <Utensils className="w-5 h-5" />
-                  {isRtl ? 'الإطعام والضيافة' : locale === 'en' ? 'Dining' : 'Restauration'}
-                </h4>
-                {hotel.hasFood ? (
-                  <p className="font-bold text-gray-100">
-                    {foodTypeText || (isRtl ? 'متوفر' : locale === 'en' ? 'Included' : 'Inclus')}
-                  </p>
-                ) : (
-                  <p className="text-gray-400">
-                    {isRtl ? 'غير مشمول' : locale === 'en' ? 'Not included' : 'Non inclus'}
-                  </p>
-                )}
-              </div>
-            </div>
 
             {/* VIP Step-by-Step Program */}
             {Array.isArray(hotel.program) && hotel.program.length > 0 && (
@@ -647,7 +613,7 @@ export default function VIPTripsHotelDetails({
           </div>
 
           {/* Sticky Bottom Actions */}
-          <div className="fixed md:absolute bottom-0 left-0 w-full bg-[#0c0f18]/95 backdrop-blur-lg border-t border-amber-400/30 p-3.5 sm:p-4 shadow-2xl z-40 md:rounded-b-[2rem]">
+          <div className="fixed md:absolute bottom-0 inset-x-0 w-full bg-[#0c0f18]/95 backdrop-blur-lg border-t border-amber-400/30 p-3.5 sm:p-4 shadow-2xl z-40 md:rounded-b-[2rem]">
             <div className="max-w-4xl mx-auto flex gap-3 sm:gap-4">
               <a
                 href={buildWhatsAppUrl(whatsapp, waText)}

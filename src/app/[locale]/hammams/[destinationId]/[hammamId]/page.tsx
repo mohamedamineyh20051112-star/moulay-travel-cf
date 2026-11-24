@@ -7,14 +7,12 @@ import { motion } from 'framer-motion';
 import {
   MapPin,
   Calendar,
-  CheckCircle,
   Phone,
   ArrowLeft,
   Camera,
   Utensils,
   Info,
   ChevronLeft,
-  Bus,
   Star,
   Waves,
   Home,
@@ -81,15 +79,6 @@ export default function HammamDetailsPage({
         ? hammam?.descriptionFr
         : hammam?.descriptionAr
   );
-  const foodTypeText = useAutoTranslate(
-    hammam?.foodTypeAr,
-    locale,
-    locale === 'en'
-      ? hammam?.foodTypeEn || hammam?.foodTypeFr
-      : locale === 'fr'
-        ? hammam?.foodTypeFr
-        : hammam?.foodTypeAr
-  );
 
   const scrollToTop = () => {
     setTimeout(() => {
@@ -135,10 +124,12 @@ export default function HammamDetailsPage({
     );
   }
 
-  const finalDzd =
-    hammam.discountPrice && Number(hammam.price) > Number(hammam.discountPrice)
-      ? Number(hammam.price) - Number(hammam.discountPrice)
-      : Number(hammam.price || 0);
+  const basePrice = Number(hammam.price || 0);
+  const discount = Number(hammam.discountPrice || 0);
+  const hasDiscount = discount > 0 && basePrice > discount;
+  const finalDzd = hasDiscount ? basePrice - discount : basePrice;
+  const baseEur = convertDzdToEur(basePrice, dzdPerEur);
+  const finalEur = convertDzdToEur(finalDzd, dzdPerEur);
   const safeMapsUrl = sanitizeExternalUrl(hammam.googleMapsLink);
 
   const formConfig = JSON.parse(JSON.stringify(defaultFormsConfig['hammams']));
@@ -310,12 +301,28 @@ export default function HammamDetailsPage({
                   <Coins className="w-6 h-6" />
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-[#6e5224]">
-                    {isRtl ? 'ابتداءً من' : locale === 'en' ? 'Starting from' : 'À partir de'}
+                  <p className="text-xs font-bold text-[#6e5224] flex items-center gap-2">
+                    <span>{isRtl ? 'ابتداءً من' : locale === 'en' ? 'Starting from' : 'À partir de'}</span>
+                    {hasDiscount && (
+                      <span className="bg-red-600 text-white text-[10px] px-2 py-0.5 rounded-full font-black">
+                        {isRtl ? 'تخفيض' : 'PROMO'}
+                      </span>
+                    )}
                   </p>
-                  <p className="text-xl sm:text-2xl font-black text-[#2b1808]" dir="ltr">
+                  {hasDiscount && (
+                    <p className="text-xs text-gray-500 line-through font-semibold" dir="ltr">
+                      {formatConvertedPrice(basePrice, currency, dzdPerEur, locale, null)}
+                    </p>
+                  )}
+                  <p className={`text-xl sm:text-2xl font-black ${hasDiscount ? 'text-emerald-700' : 'text-[#2b1808]'}`} dir="ltr">
                     {formatConvertedPrice(finalDzd, currency, dzdPerEur, locale, null)}
                   </p>
+                  {hasDiscount && currency === 'DZD' && finalEur > 0 && (
+                    <p className="text-xs font-bold text-gray-600" dir="ltr">
+                      {baseEur > 0 && <span className="line-through opacity-75 mr-1.5">{baseEur} €</span>}
+                      <span className="text-emerald-700 font-black">{finalEur} €</span>
+                    </p>
+                  )}
                 </div>
               </div>
             )}
@@ -444,38 +451,6 @@ export default function HammamDetailsPage({
               </div>
             </div>
           )}
-
-          {/* Transport & Food Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <div className="bg-white p-5 rounded-2xl border border-[#e5d5b5] shadow-sm">
-              <h4 className="text-[#3a210c] font-bold mb-3 flex items-center gap-2">
-                <Bus className="w-5 h-5 text-[#c59a3f]" /> {isRtl ? 'خدمة النقل' : 'Transport'}
-              </h4>
-              {hammam.hasTransport ? (
-                <div className="flex items-center gap-3">
-                  <div className="bg-green-100 p-2 rounded-full text-green-600">
-                    <CheckCircle className="w-5 h-5" />
-                  </div>
-                  <p className="font-bold text-gray-800">{isRtl ? 'متوفر' : locale === 'en' ? 'Included' : 'Inclus'}</p>
-                </div>
-              ) : (
-                <p className="text-gray-500">{isRtl ? 'غير متوفر' : locale === 'en' ? 'Not available' : 'Non disponible'}</p>
-              )}
-            </div>
-
-            <div className="bg-white p-5 rounded-2xl border border-[#e5d5b5] shadow-sm">
-              <h4 className="text-[#3a210c] font-bold mb-3 flex items-center gap-2">
-                <Utensils className="w-5 h-5 text-[#c59a3f]" /> {isRtl ? 'الإطعام' : locale === 'en' ? 'Catering' : 'Restauration'}
-              </h4>
-              {hammam.hasFood ? (
-                <p className="font-bold text-gray-800">
-                  {foodTypeText || (isRtl ? 'متوفر' : locale === 'en' ? 'Included' : 'Inclus')}
-                </p>
-              ) : (
-                <p className="text-gray-500">{isRtl ? 'غير متوفر' : locale === 'en' ? 'Not available' : 'Non disponible'}</p>
-              )}
-            </div>
-          </div>
 
           {/* Program */}
           {Array.isArray(hammam.program) && hammam.program.length > 0 && (

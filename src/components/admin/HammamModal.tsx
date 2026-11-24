@@ -275,6 +275,9 @@ export default function HammamModal({
         en: (c.en || '').trim() || translatedCustEn[i] || c.fr || c.ar || '',
       }));
 
+      const derivedHasFood = enabledFeatures.includes('food_included');
+      const derivedHasTransport = enabledFeatures.includes('transport');
+
       const hammamData = {
         destinationId: finalDestId,
         nameAr,
@@ -297,11 +300,12 @@ export default function HammamModal({
         roomImages,
         foodImages,
         roomPrices: cleanRooms,
-        hasFood,
+        hasFood: derivedHasFood,
         foodTypeAr,
         foodTypeFr: finalFoodFr,
         foodTypeEn: finalFoodEn,
-        hasTransport,
+        hasTransport: derivedHasTransport,
+        featuresConfigured: true,
         enabledFeatures,
         customFeatures: cleanCustomFeatures,
         program: cleanProgram,
@@ -618,38 +622,30 @@ export default function HammamModal({
                 </div>
 
                 <div className="pt-6 border-t space-y-4">
-                  <h3 className="font-bold text-gray-900">خدمات إضافية (الإطعام والنقل)</h3>
-                  <label className="flex items-center gap-2 cursor-pointer p-3 border rounded-xl hover:bg-gray-50">
-                    <input type="checkbox" checked={hasFood} onChange={(e) => setHasFood(e.target.checked)} className="w-5 h-5 text-primary" />
-                    <span className="font-medium text-gray-700">الإطعام متوفر في هذا الحمام؟</span>
-                  </label>
-                  {hasFood && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pr-2">
-                      <div>
-                        <label className="block text-sm mb-1">نوع الإطعام (عربي)</label>
-                        <input value={foodTypeAr} onChange={(e) => setFoodTypeAr(e.target.value)} className="w-full border rounded-lg p-2" />
-                      </div>
-                      <div>
-                        <label className="block text-sm mb-1">نوع الإطعام (فرنسي)</label>
-                        <input value={foodTypeFr} onChange={(e) => setFoodTypeFr(e.target.value)} className="w-full border rounded-lg p-2" dir="ltr" />
-                      </div>
-                    </div>
-                  )}
-
-                  <label className="flex items-center gap-2 cursor-pointer p-3 border rounded-xl hover:bg-gray-50">
-                    <input type="checkbox" checked={hasTransport} onChange={(e) => setHasTransport(e.target.checked)} className="w-5 h-5 text-primary" />
-                    <span className="font-medium text-gray-700">توفير خدمات النقل (Transport)</span>
-                  </label>
-                </div>
-
-                <div className="pt-6 border-t">
                   <FeaturesToggleEditor
                     category="hammams"
                     enabledFeatures={enabledFeatures}
                     customFeatures={customFeatures}
-                    onChangeEnabled={setEnabledFeatures}
+                    onChangeEnabled={(ids) => {
+                      setEnabledFeatures(ids);
+                      setHasFood(ids.includes('food_included'));
+                      setHasTransport(ids.includes('transport'));
+                    }}
                     onChangeCustom={setCustomFeatures}
                   />
+
+                  {enabledFeatures.includes('food_included') && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-50 p-4 rounded-xl border border-gray-200">
+                      <div>
+                        <label className="block text-sm font-medium mb-1">تفاصيل الإطعام (عربي - اختياري)</label>
+                        <input value={foodTypeAr} onChange={(e) => setFoodTypeAr(e.target.value)} className="w-full border rounded-lg p-2 bg-white" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-1">تفاصيل الإطعام (فرنسي - اختياري)</label>
+                        <input value={foodTypeFr} onChange={(e) => setFoodTypeFr(e.target.value)} className="w-full border rounded-lg p-2 bg-white" dir="ltr" />
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             )}

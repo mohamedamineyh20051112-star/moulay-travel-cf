@@ -1,7 +1,8 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { db } from '@/lib/firebase';
-import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
+import { collection, getDocs, addDoc, setDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
+import { normalizeDestination } from '@/lib/normalize';
 import Link from 'next/link';
 import {
   ChevronRight,
@@ -42,17 +43,51 @@ export default function ServicesDestinationsAdmin({ params }: { params: { locale
   const [globalResults, setGlobalResults] = useState<WorldDestinationPreset[] | null>(null);
   const [searchingGlobal, setSearchingGlobal] = useState(false);
 
+  const [loadError, setLoadError] = useState<string | null>(null);
+
   useEffect(() => {
     fetchDestinations();
   }, []);
 
   const fetchDestinations = async () => {
+    setLoadError(null);
     try {
-      const querySnapshot = await getDocs(collection(db, 'services_destinations'));
-      const destsData = querySnapshot.docs.map((d): any => ({ id: d.id, ...d.data() }));
-      setDestinations(destsData);
-    } catch (error) {
+      const [unifiedSnap, vipSnap, orgSnap, hamSnap] = await Promise.all([
+        getDocs(collection(db, 'services_destinations')),
+        getDocs(collection(db, 'vip_trips_destinations')),
+        getDocs(collection(db, 'organized_trips_destinations')),
+        getDocs(collection(db, 'hammams_destinations')),
+      ]);
+
+      const destMap = new Map<string, any>();
+      const ingest = (snap: typeof unifiedSnap, sourceCollection: string) => {
+        snap.docs.forEach((d) => {
+          const norm = normalizeDestination(d);
+          const existing = destMap.get(d.id);
+          if (!existing) {
+            destMap.set(d.id, { ...norm, _sourceCollection: sourceCollection });
+          } else {
+            destMap.set(d.id, {
+              ...existing,
+              ...norm,
+              _sourceCollection:
+                sourceCollection === 'services_destinations'
+                  ? 'services_destinations'
+                  : existing._sourceCollection,
+            });
+          }
+        });
+      };
+
+      ingest(vipSnap, 'vip_trips_destinations');
+      ingest(orgSnap, 'organized_trips_destinations');
+      ingest(hamSnap, 'hammams_destinations');
+      ingest(unifiedSnap, 'services_destinations');
+
+      setDestinations(Array.from(destMap.values()));
+    } catch (error: any) {
       console.error('Error fetching destinations:', error);
+      setLoadError('تعذر تحميل الوجهات: ' + (error?.message || 'خطأ غير معروف'));
     } finally {
       setIsLoading(false);
     }
@@ -159,7 +194,13 @@ export default function ServicesDestinationsAdmin({ params }: { params: { locale
       }
 
       if (editingDest) {
-        await updateDoc(doc(db, 'services_destinations', editingDest.id), payload);
+        const srcCol = editingDest._sourceCollection || 'services_destinations';
+        if (srcCol === 'services_destinations') {
+          await updateDoc(doc(db, 'services_destinations', editingDest.id), payload);
+        } else {
+          await setDoc(doc(db, 'services_destinations', editingDest.id), payload, { merge: true });
+          await updateDoc(doc(db, srcCol, editingDest.id), payload).catch(() => {});
+        }
       } else {
         await addDoc(collection(db, 'services_destinations'), payload);
       }
@@ -167,20 +208,34 @@ export default function ServicesDestinationsAdmin({ params }: { params: { locale
       setIsModalOpen(false);
       setEditingDest(null);
       await fetchDestinations();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving destination:', error);
+      if (error?.code === 'permission-denied') {
+        alert('رفضت قاعدة البيانات التعديل: تأكد من تسجيل الدخول بحساب المدير (super_admin) على الموقع.');
+      } else {
+        alert('حدث خطأ أثناء حفظ الوجهة: ' + (error?.message || 'خطأ غير معروف'));
+      }
     } finally {
       setSaving(false);
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (dest: any) => {
     if (window.confirm('هل أنت متأكد من حذف هذه الوجهة؟')) {
       try {
-        await deleteDoc(doc(db, 'services_destinations', id));
-        fetchDestinations();
-      } catch (error) {
+        const srcCol = dest?._sourceCollection || 'services_destinations';
+        await deleteDoc(doc(db, 'services_destinations', dest.id)).catch(() => {});
+        if (srcCol !== 'services_destinations') {
+          await deleteDoc(doc(db, srcCol, dest.id));
+        }
+        await fetchDestinations();
+      } catch (error: any) {
         console.error('Error deleting destination:', error);
+        if (error?.code === 'permission-denied') {
+          alert('رفضت قاعدة البيانات الحذف: تأكد من تسجيل الدخول بحساب المدير (super_admin) على الموقع.');
+        } else {
+          alert('حدث خطأ أثناء حذف الوجهة: ' + (error?.message || 'خطأ غير معروف'));
+        }
       }
     }
   };
@@ -213,6 +268,12 @@ export default function ServicesDestinationsAdmin({ params }: { params: { locale
           إضافة وجهة جديدة
         </button>
       </div>
+
+      {loadError && (
+        <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl text-sm font-bold">
+          {loadError}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {isLoading ? (
@@ -273,7 +334,7 @@ export default function ServicesDestinationsAdmin({ params }: { params: { locale
                     <Pencil className="w-4 h-4" /> تعديل
                   </button>
                   <button
-                    onClick={() => handleDelete(dest.id)}
+                    onClick={() => handleDelete(dest)}
                     className="flex-1 flex items-center justify-center gap-2 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition-colors font-medium"
                   >
                     <Trash2 className="w-4 h-4" /> حذف
@@ -349,6 +410,9 @@ export default function ServicesDestinationsAdmin({ params }: { params: { locale
                         <img
                           src={preset.flag}
                           alt=""
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                          }}
                           className="w-5 h-3.5 object-cover rounded shrink-0"
                         />
                         <span className="truncate flex-1">{preset.nameAr}</span>

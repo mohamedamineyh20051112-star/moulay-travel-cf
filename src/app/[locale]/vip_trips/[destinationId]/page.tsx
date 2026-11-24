@@ -1,7 +1,7 @@
 'use client';
 import { normalizeDestination } from '@/lib/normalize';
 import { useAutoTranslate } from '@/lib/translateClient';
-import { useCurrencyStore, formatConvertedPrice } from '@/store/useCurrencyStore';
+import { useCurrencyStore, formatConvertedPrice, convertDzdToEur } from '@/store/useCurrencyStore';
 import { resolveItemFeatures } from '@/data/serviceFeatures';
 import FeatureIcon from '@/components/FeatureIcon';
 import { motion } from 'framer-motion';
@@ -32,12 +32,6 @@ function VIPHotelCard({
     locale,
     locale === 'en' ? hotel.nameEn || hotel.nameFr : locale === 'fr' ? hotel.nameFr : hotel.nameAr
   );
-  const foodLabel = useAutoTranslate(
-    hotel.foodTypeAr,
-    locale,
-    locale === 'en' ? hotel.foodTypeEn || hotel.foodTypeFr : locale === 'fr' ? hotel.foodTypeFr : hotel.foodTypeAr
-  );
-
   const totalImages =
     (hotel.images?.length || 0) + (hotel.roomImages?.length || 0) + (hotel.foodImages?.length || 0);
   const features = resolveItemFeatures('vip_trips', hotel, locale).slice(0, 4);
@@ -133,11 +127,6 @@ function VIPHotelCard({
               <span>{feat.label}</span>
             </span>
           ))}
-          {hotel.hasFood && foodLabel && features.length < 3 && (
-            <span className="bg-white/5 text-gray-200 border border-white/10 text-xs px-2.5 py-1 rounded-full font-medium">
-              {foodLabel}
-            </span>
-          )}
         </div>
 
         <div className="mt-auto pt-5 border-t border-white/10 flex items-end justify-between gap-3">
@@ -147,12 +136,18 @@ function VIPHotelCard({
             </p>
             {hasDiscount ? (
               <div className="flex flex-col">
-                <span className="text-gray-500 line-through text-xs font-medium" dir="ltr">
+                <span className="text-gray-400 line-through text-xs font-medium" dir="ltr">
                   {formatConvertedPrice(basePrice, currency, dzdPerEur, locale, null)}
                 </span>
                 <span className="text-amber-300 font-black text-2xl" dir="ltr">
                   {formatConvertedPrice(finalDzd, currency, dzdPerEur, locale, null)}
                 </span>
+                {currency === 'DZD' && convertDzdToEur(finalDzd, dzdPerEur) > 0 && (
+                  <span className="text-xs text-gray-300 font-bold" dir="ltr">
+                    <span className="line-through opacity-70 mr-1">{convertDzdToEur(basePrice, dzdPerEur)} €</span>
+                    <span className="text-amber-200">{convertDzdToEur(finalDzd, dzdPerEur)} €</span>
+                  </span>
+                )}
               </div>
             ) : (
               <p className="text-2xl font-black text-amber-300" dir="ltr">
@@ -234,7 +229,7 @@ export default function VIPTripsHotels({
       className="bg-[#07090e] flex flex-col min-h-screen relative overflow-hidden"
       dir={isRtl ? 'rtl' : 'ltr'}
     >
-      <div className="pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[380px] bg-gradient-to-b from-[#d4af37]/15 via-amber-500/5 to-transparent blur-3xl" />
+      <div className="pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[380px] bg-gradient-to-b from-[#d4af37]/15 via-amber-500/5 to-transparent blur-3xl" />
 
       <main className="flex-grow pt-8 pb-24 relative z-10">
         <div className="container mx-auto px-4 max-w-7xl">

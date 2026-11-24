@@ -1,7 +1,6 @@
 'use client';
 import { normalizeDestination } from '@/lib/normalize';
 import { useAutoTranslate } from '@/lib/translateClient';
-import { useCurrencyStore, formatConvertedPrice } from '@/store/useCurrencyStore';
 import { useLocale } from 'next-intl';
 import { motion } from 'framer-motion';
 import { MapPin, Building2, ChevronRight, Crown, Sparkles } from 'lucide-react';
@@ -13,18 +12,15 @@ import { collection, getDocs } from 'firebase/firestore';
 function VIPDestinationCard({
   dest,
   count,
-  minPriceDzd,
   locale,
   index,
 }: {
   dest: any;
   count: number;
-  minPriceDzd: number;
   locale: 'ar' | 'fr' | 'en';
   index: number;
 }) {
   const isRtl = locale === 'ar';
-  const { currency, dzdPerEur } = useCurrencyStore();
   const displayName = useAutoTranslate(
     dest.nameAr,
     locale,
@@ -36,7 +32,6 @@ function VIPDestinationCard({
     locale === 'en' ? dest.countryEn || dest.countryFr : locale === 'fr' ? dest.countryFr : dest.countryAr
   );
 
-  const effectiveStartPrice = minPriceDzd > 0 ? minPriceDzd : Number(dest.startingPrice || 0);
   const flagSrc = dest.countryCode ? `/flags/${String(dest.countryCode).toLowerCase()}.svg` : null;
 
   return (
@@ -108,17 +103,6 @@ function VIPDestinationCard({
                   {displayCountry}
                 </p>
               )}
-
-              {effectiveStartPrice > 0 && (
-                <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md border border-amber-300/30 rounded-xl px-3.5 py-1.5 mt-1">
-                  <span className="text-xs text-amber-100/80 font-medium">
-                    {locale === 'ar' ? 'ابتداءً من' : locale === 'en' ? 'From' : 'À partir de'}
-                  </span>
-                  <span className="text-amber-300 font-black text-base md:text-lg" dir="ltr">
-                    {formatConvertedPrice(effectiveStartPrice, currency, dzdPerEur, locale, null)}
-                  </span>
-                </div>
-              )}
             </div>
 
             <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#d4af37] to-[#b58926] text-[#090b10] flex items-center justify-center shadow-lg shadow-amber-500/25 group-hover:scale-110 transition-transform duration-300 shrink-0">
@@ -137,7 +121,6 @@ export default function VIPTripsDestinations() {
 
   const [destinations, setDestinations] = useState<any[]>([]);
   const [hotelsCount, setHotelsCount] = useState<Record<string, number>>({});
-  const [minPrices, setMinPrices] = useState<Record<string, number>>({});
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -157,23 +140,15 @@ export default function VIPTripsDestinations() {
       destSnap.docs.forEach((d) => destMap.set(d.id, normalizeDestination(d)));
 
       const counts: Record<string, number> = {};
-      const mins: Record<string, number> = {};
 
       hotelsSnap.docs.forEach((d) => {
         const data = d.data();
         const destId = data.destinationId;
         if (!destId) return;
         counts[destId] = (counts[destId] || 0) + 1;
-        const base = Number(data.price || 0);
-        const disc = Number(data.discountPrice || 0);
-        const eff = disc > 0 && base > disc ? base - disc : base;
-        if (eff > 0 && (!mins[destId] || eff < mins[destId])) {
-          mins[destId] = eff;
-        }
       });
 
       setHotelsCount(counts);
-      setMinPrices(mins);
 
       const visibleDestinations = Array.from(destMap.values()).filter((dest) => counts[dest.id] > 0);
       setDestinations(visibleDestinations);
@@ -190,43 +165,58 @@ export default function VIPTripsDestinations() {
       dir={isRtl ? 'rtl' : 'ltr'}
     >
       {/* Ambient Champagne Gold Spotlight */}
-      <div className="pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[420px] bg-gradient-to-b from-[#d4af37]/15 via-amber-500/5 to-transparent blur-3xl" />
+      <div className="pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[420px] bg-gradient-to-b from-[#d4af37]/15 via-amber-500/5 to-transparent blur-3xl" />
 
       <main className="flex-grow pt-10 pb-24 relative z-10">
         <div className="container mx-auto px-4 max-w-7xl">
           {/* Header */}
           <div className="text-center mb-14 md:mb-16">
+            {/* Ornamental Royal Crest */}
             <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-400/10 border border-amber-300/30 text-amber-300 font-bold text-xs md:text-sm tracking-widest uppercase mb-4"
+              initial={{ opacity: 0, scale: 0.92 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.45 }}
+              className="flex items-center justify-center gap-3 mb-4"
             >
-              <Sparkles className="w-4 h-4" />
-              {locale === 'ar'
-                ? 'تجربة سفر ملكية واستثنائية'
-                : locale === 'en'
-                  ? 'PRIVATE ROYAL COLLECTION'
-                  : 'COLLECTION PRIVÉE D’EXCEPTION'}
+              <span className="h-[1.5px] w-14 sm:w-24 bg-gradient-to-r from-transparent via-amber-400/70 to-amber-300" />
+              <span className="w-2 h-2 rotate-45 bg-amber-300 shadow-[0_0_10px_rgba(252,211,77,0.8)]" />
+              <div className="w-11 h-11 rounded-full bg-gradient-to-br from-[#d4af37]/25 to-amber-500/5 border border-amber-300/50 flex items-center justify-center shadow-[0_0_24px_rgba(212,175,55,0.28)]">
+                <Crown className="w-5 h-5 text-amber-300" />
+              </div>
+              <span className="w-2 h-2 rotate-45 bg-amber-300 shadow-[0_0_10px_rgba(252,211,77,0.8)]" />
+              <span className="h-[1.5px] w-14 sm:w-24 bg-gradient-to-l from-transparent via-amber-400/70 to-amber-300" />
             </motion.div>
 
             <motion.h1
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.08 }}
-              className="text-4xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-amber-100 to-amber-300 tracking-tight"
+              className="inline-block px-6 py-2 rounded-3xl bg-gradient-to-b from-amber-300/10 via-amber-400/[0.04] to-transparent border border-amber-300/25 shadow-[0_0_40px_-10px_rgba(212,175,55,0.3)] text-3xl sm:text-5xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-100 via-amber-300 to-amber-100 drop-shadow-[0_4px_20px_rgba(212,175,55,0.28)] tracking-tight leading-tight"
             >
               {locale === 'ar'
-                ? 'رحلات وإقامات VIP'
+                ? 'الرحلات وإقامات VIP'
                 : locale === 'en'
-                  ? 'VIP Destinations'
-                  : 'Nos Destinations VIP'}
+                  ? 'VIP Trips & Stays'
+                  : 'Voyages & Séjours VIP'}
             </motion.h1>
+
+            {/* Bottom Ornamental Filigree Line */}
+            <motion.div
+              initial={{ opacity: 0, width: 0 }}
+              animate={{ opacity: 1, width: 'auto' }}
+              transition={{ delay: 0.14 }}
+              className="flex items-center justify-center gap-2.5 mt-4"
+            >
+              <span className="h-[1px] w-20 sm:w-32 bg-gradient-to-r from-transparent to-amber-400/60" />
+              <Sparkles className="w-4 h-4 text-amber-300/90" />
+              <span className="h-[1px] w-20 sm:w-32 bg-gradient-to-l from-transparent to-amber-400/60" />
+            </motion.div>
 
             <motion.p
               initial={{ opacity: 0, y: 18 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.16 }}
-              className="text-gray-400 max-w-2xl mx-auto mt-4 text-base md:text-lg"
+              transition={{ delay: 0.18 }}
+              className="text-gray-300 max-w-2xl mx-auto mt-4 text-base md:text-lg"
             >
               {locale === 'ar'
                 ? 'باقات فاخرة مختارة بعناية مع خدمة مرافقة خاصة، نقل راقٍ وأرقى المنتجعات العالمية.'
@@ -259,7 +249,6 @@ export default function VIPTripsDestinations() {
                   key={dest.id}
                   dest={dest}
                   count={hotelsCount[dest.id] || 0}
-                  minPriceDzd={minPrices[dest.id] || 0}
                   locale={locale}
                   index={index}
                 />

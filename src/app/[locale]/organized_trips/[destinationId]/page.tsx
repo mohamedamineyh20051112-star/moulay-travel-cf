@@ -1,7 +1,7 @@
 'use client';
 import { normalizeDestination } from '@/lib/normalize';
 import { useAutoTranslate } from '@/lib/translateClient';
-import { useCurrencyStore, formatConvertedPrice } from '@/store/useCurrencyStore';
+import { useCurrencyStore, formatConvertedPrice, convertDzdToEur } from '@/store/useCurrencyStore';
 import { resolveItemFeatures } from '@/data/serviceFeatures';
 import FeatureIcon from '@/components/FeatureIcon';
 import { motion } from 'framer-motion';
@@ -154,6 +154,12 @@ function OrganizedHotelCard({
                 <span className="text-emerald-600 font-black text-2xl" dir="ltr">
                   {formatConvertedPrice(finalDzd, currency, dzdPerEur, locale, null)}
                 </span>
+                {currency === 'DZD' && convertDzdToEur(finalDzd, dzdPerEur) > 0 && (
+                  <span className="text-xs text-gray-500 font-bold" dir="ltr">
+                    <span className="line-through opacity-75 mr-1">{convertDzdToEur(basePrice, dzdPerEur)} €</span>
+                    <span className="text-emerald-700">{convertDzdToEur(finalDzd, dzdPerEur)} €</span>
+                  </span>
+                )}
               </div>
             ) : (
               <p className="text-2xl font-black text-primary" dir="ltr">

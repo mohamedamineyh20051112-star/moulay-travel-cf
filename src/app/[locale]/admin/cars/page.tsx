@@ -52,6 +52,14 @@ export default function CarsAdminPage({ params }: { params: { locale: string } }
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6" dir={params.locale === 'ar' ? 'rtl' : 'ltr'}>
+      <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
+        <Link href={`/${params.locale}/admin`} className="hover:text-primary transition-colors">
+          لوحة التحكم
+        </Link>
+        <ChevronRight className="w-4 h-4 rtl:rotate-180" />
+        <span className="text-gray-900 font-medium">إدارة السيارات</span>
+      </div>
+
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 md:p-6 rounded-2xl shadow-sm border border-gray-100">
         <div>
           <h1 className="text-2xl md:text-3xl font-black text-gray-900">إدارة السيارات</h1>
@@ -66,22 +74,39 @@ export default function CarsAdminPage({ params }: { params: { locale: string } }
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {items.map((item) => (
-          <div key={item.id} className="bg-white rounded-2xl shadow border overflow-hidden">
-            <div className="h-48 bg-gray-100 relative">
-              {item.images?.[0] && <img src={item.images[0]} className="w-full h-full object-cover" />}
-            </div>
-            <div className="p-4">
-              <h3 className="font-bold text-lg mb-1">{item.brand} {item.nameFr}</h3>
-              <p className="text-gray-600 text-sm">{item.year} - {item.gearbox}</p>
-              <p className="text-gold font-bold mt-2">{item.startingPrice} د.ج</p>
-              <div className="flex gap-2 mt-4">
-                <button onClick={() => { setEditingItem(item); setIsModalOpen(true); }} className="flex-1 bg-blue-50 text-blue-600 py-2 rounded-lg">تعديل</button>
-                <button onClick={() => handleDelete(item.id)} className="bg-red-50 text-red-600 p-2 rounded-lg"><Trash2 className="w-5 h-5" /></button>
+        {items.map((item) => {
+          const base = Number(item.startingPrice || 0);
+          const disc = Number(item.discountPrice || 0);
+          const hasDiscount = disc > 0 && base > disc;
+          return (
+            <div key={item.id} className="bg-white rounded-2xl shadow border overflow-hidden">
+              <div className="h-48 bg-gray-100 relative">
+                {item.images?.[0] && <img src={item.images[0]} className="w-full h-full object-cover" />}
+                {hasDiscount && (
+                  <span className="absolute top-2.5 left-2.5 bg-red-600 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow">
+                    تخفيض -{disc.toLocaleString('fr-DZ')} د.ج
+                  </span>
+                )}
+              </div>
+              <div className="p-4">
+                <h3 className="font-bold text-lg mb-1">{item.brand} {item.nameFr}</h3>
+                <p className="text-gray-600 text-sm">{item.year} - {item.gearbox}</p>
+                {hasDiscount ? (
+                  <div className="flex items-center gap-2 mt-2">
+                    <span className="text-xs text-gray-400 line-through">{base.toLocaleString('fr-DZ')} د.ج</span>
+                    <span className="text-emerald-600 font-bold">{(base - disc).toLocaleString('fr-DZ')} د.ج</span>
+                  </div>
+                ) : (
+                  <p className="text-gold font-bold mt-2">{item.startingPrice} د.ج</p>
+                )}
+                <div className="flex gap-2 mt-4">
+                  <button onClick={() => { setEditingItem(item); setIsModalOpen(true); }} className="flex-1 bg-blue-50 text-blue-600 py-2 rounded-lg">تعديل</button>
+                  <button onClick={() => handleDelete(item.id)} className="bg-red-50 text-red-600 p-2 rounded-lg"><Trash2 className="w-5 h-5" /></button>
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
       
       <CarModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSave={handleSave} initialData={editingItem} />

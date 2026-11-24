@@ -160,6 +160,9 @@ function OTHotelsAdminContent({ params }: { params: { locale: string } }) {
         ) : (
           hotels.map((hotel) => {
             const destName = destinations.find(d => d.id === hotel.destinationId)?.nameAr || 'غير محدد';
+            const base = Number(hotel.price || 0);
+            const disc = Number(hotel.discountPrice || 0);
+            const hasDiscount = disc > 0 && base > disc;
             return (
               <div key={hotel.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
                 <div className="h-48 relative bg-gray-100">
@@ -174,6 +177,11 @@ function OTHotelsAdminContent({ params }: { params: { locale: string } }) {
                     <Star className="w-3 h-3 text-gold fill-gold" />
                     {hotel.stars} نجوم
                   </div>
+                  {hasDiscount && (
+                    <div className="absolute top-3 left-3 bg-red-600 text-white px-2.5 py-1 rounded-lg text-xs font-bold shadow">
+                      تخفيض -{disc.toLocaleString('fr-DZ')} د.ج
+                    </div>
+                  )}
                 </div>
                 <div className="p-5 flex-1 flex flex-col">
                   <h3 className="font-bold text-lg text-gray-900 mb-1">{hotel.nameAr}</h3>
@@ -184,7 +192,14 @@ function OTHotelsAdminContent({ params }: { params: { locale: string } }) {
                   <div className="mt-auto pt-4 border-t flex items-center justify-between">
                     <div>
                       <p className="text-xs text-gray-500">يبدأ من</p>
-                      <p className="font-bold text-primary">{hotel.price} د.ج</p>
+                      {hasDiscount ? (
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-gray-400 line-through">{base.toLocaleString('fr-DZ')} د.ج</span>
+                          <span className="font-bold text-emerald-600">{(base - disc).toLocaleString('fr-DZ')} د.ج</span>
+                        </div>
+                      ) : (
+                        <p className="font-bold text-primary">{hotel.price} د.ج</p>
+                      )}
                     </div>
                     <div className="flex gap-2">
                       <button

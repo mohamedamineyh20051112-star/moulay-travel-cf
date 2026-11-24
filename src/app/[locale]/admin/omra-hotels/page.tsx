@@ -109,7 +109,21 @@ export default function OmraHotelsAdmin({ params }: { params: { locale: string }
                       </td>
                       <td className="py-3 px-6 font-bold text-gray-800">{hotel.name?.ar || hotel.name?.fr || 'بدون اسم'}</td>
                       <td className="py-3 px-6 text-gray-500">{hotel.code}</td>
-                      <td className="py-3 px-6 text-primary font-bold">{hotel.priceStartDzd} دج</td>
+                      <td className="py-3 px-6 text-primary font-bold">
+                        {(() => {
+                          const base = Number(hotel.priceStartDzd || 0);
+                          const disc = Number(hotel.discountPrice || 0);
+                          if (disc > 0 && base > disc) {
+                            return (
+                              <div className="flex flex-col">
+                                <span className="text-xs text-gray-400 line-through">{base.toLocaleString('fr-DZ')} دج</span>
+                                <span className="text-emerald-600">{(base - disc).toLocaleString('fr-DZ')} دج</span>
+                              </div>
+                            );
+                          }
+                          return `${hotel.priceStartDzd} دج`;
+                        })()}
+                      </td>
                       <td className="py-3 px-6">
                         <div className="flex items-center gap-3">
                           <button onClick={() => openEditModal(hotel)} className="text-blue-500 hover:bg-blue-50 p-2 rounded-lg transition-colors">

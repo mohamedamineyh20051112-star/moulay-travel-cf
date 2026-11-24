@@ -8,9 +8,22 @@ export default function SplashScreen() {
   const [show, setShow] = useState(true);
 
   useEffect(() => {
+    let delay = 700;
+    try {
+      if (typeof window !== "undefined") {
+        if (window.sessionStorage.getItem("mt_splash_shown") === "1") {
+          delay = 120;
+        } else {
+          window.sessionStorage.setItem("mt_splash_shown", "1");
+        }
+      }
+    } catch {
+      // Ignore storage errors
+    }
+
     const timer = setTimeout(() => {
       setShow(false);
-    }, 800);
+    }, delay);
 
     return () => clearTimeout(timer);
   }, []);
@@ -22,9 +35,11 @@ export default function SplashScreen() {
           key="splash"
           initial={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.4, ease: "easeInOut" }}
+          transition={{ duration: 0.35, ease: "easeInOut" }}
+          style={{ animation: "mtSplashAutoHide 0.4s ease-out 1.2s forwards" }}
           className="fixed top-0 left-0 w-screen h-[100dvh] z-[100] flex flex-col items-center justify-center bg-white m-0 p-0 overflow-hidden"
         >
+          <style>{`@keyframes mtSplashAutoHide { to { opacity: 0; visibility: hidden; pointer-events: none; } }`}</style>
           <motion.div
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}

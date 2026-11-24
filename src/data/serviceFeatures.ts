@@ -101,8 +101,11 @@ export interface ResolvedFeatureBadge {
 
 /**
  * Resolves visible feature badges for a card or details page.
- * Respects `featuresConfigured` + `enabledFeatures` + `customFeatures` when set,
- * and falls back gracefully for older Firestore documents.
+ * - For `cars`: strictly renders only explicitly saved `enabledFeatures` + `customFeatures`
+ *   (no automatic default perks on unconfigured cars).
+ * - For other categories: respects `enabledFeatures` + `customFeatures` directly whenever
+ *   `enabledFeatures` array exists (works with or without `featuresConfigured`), and falls back
+ *   to catalog defaults only for legacy documents without `enabledFeatures`.
  */
 export function resolveItemFeatures(
   category: ServiceCategory,
@@ -114,19 +117,45 @@ export function resolveItemFeatures(
 
   const result: ResolvedFeatureBadge[] = [];
 
-  if (item?.featuresConfigured && Array.isArray(item.enabledFeatures)) {
+  const getMealDetail = (): string => {
+    const raw =
+      langKey === 'en'
+        ? item?.foodTypeEn || item?.foodTypeFr || item?.foodTypeAr || item?.food?.type?.en || item?.food?.type?.fr || item?.food?.type?.ar
+        : langKey === 'fr'
+          ? item?.foodTypeFr || item?.foodTypeAr || item?.food?.type?.fr || item?.food?.type?.ar
+          : item?.foodTypeAr || item?.food?.type?.ar || item?.food?.type?.fr;
+    return typeof raw === 'string' ? raw.trim() : '';
+  };
+
+  const formatPresetLabel = (preset: ServiceFeaturePreset): string => {
+    const baseLabel = preset.label[langKey] || preset.label.fr || preset.label.ar;
+    if (preset.id === 'food_included' || preset.id === 'gourmet_food') {
+      const mealDetail = getMealDetail();
+      if (
+        mealDetail &&
+        !baseLabel.toLowerCase().includes(mealDetail.toLowerCase()) &&
+        mealDetail !== 'متوفر' &&
+        mealDetail.toLowerCase() !== 'inclus'
+      ) {
+        return `${baseLabel} (${mealDetail})`;
+      }
+    }
+    return baseLabel;
+  };
+
+  if (Array.isArray(item?.enabledFeatures)) {
     const enabledSet = new Set<string>(item.enabledFeatures);
     for (const preset of catalog) {
       if (enabledSet.has(preset.id)) {
         result.push({
           id: preset.id,
           icon: preset.icon,
-          label: preset.label[langKey] || preset.label.fr || preset.label.ar,
+          label: formatPresetLabel(preset),
         });
       }
     }
-  } else {
-    // Backward compatibility with legacy boolean flags
+  } else if (category !== 'cars') {
+    // Backward compatibility with legacy boolean flags for non-car categories
     for (const preset of catalog) {
       let enabled = Boolean(preset.defaultEnabled);
       if (preset.id === 'food_included' || preset.id === 'gourmet_food') {
@@ -140,7 +169,7 @@ export function resolveItemFeatures(
         result.push({
           id: preset.id,
           icon: preset.icon,
-          label: preset.label[langKey] || preset.label.fr || preset.label.ar,
+          label: formatPresetLabel(preset),
         });
       }
     }

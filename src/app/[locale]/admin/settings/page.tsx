@@ -138,70 +138,70 @@ export default function SettingsAdmin({ params }: { params: { locale: string } }
           <span className="text-gray-800 font-medium">إعدادات الموقع</span>
         </div>
 
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
           <div className="flex items-center gap-3">
             <div className="p-3 bg-primary text-white rounded-xl shadow-lg shadow-primary/20"><SettingsIcon className="w-6 h-6"/></div>
-            <h1 className="text-3xl font-bold text-gray-800">إعدادات الموقع العامة</h1>
-          </div>
-                    {/* Exchange Rate Settings (DZD -> EUR) */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-            <h2 className="text-xl font-bold text-gray-800 mb-2">سعر الصرف التلقائي (دينار ⇄ يورو)</h2>
-            <p className="text-sm text-gray-500 mb-4">
-              أدخل الأسعار بالدينار الجزائري فقط في لوحة التحكم، وسيتم تحويلها تلقائياً لليورو للزوار.
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <label className="flex items-center gap-3 p-4 rounded-xl border cursor-pointer hover:bg-gray-50">
-                <input
-                  type="radio"
-                  name="exchangeRateMode"
-                  checked={exchangeRateMode === 'auto'}
-                  onChange={() => setExchangeRateMode('auto')}
-                  className="w-5 h-5 text-primary"
-                />
-                <div>
-                  <span className="font-bold block text-gray-800">تلقائي يومي (API)</span>
-                  <span className="text-xs text-gray-500">يجلب سعر الصرف اليومي تلقائياً عبر الإنترنت.</span>
-                </div>
-              </label>
-              <label className="flex items-center gap-3 p-4 rounded-xl border cursor-pointer hover:bg-gray-50">
-                <input
-                  type="radio"
-                  name="exchangeRateMode"
-                  checked={exchangeRateMode === 'manual'}
-                  onChange={() => setExchangeRateMode('manual')}
-                  className="w-5 h-5 text-primary"
-                />
-                <div>
-                  <span className="font-bold block text-gray-800">سعر مخصص (مثل سعر السكوار)</span>
-                  <span className="text-xs text-gray-500">تحدد قيمة 1 يورو بالدينار بنفسك.</span>
-                </div>
-              </label>
-            </div>
-            {exchangeRateMode === 'manual' && (
-              <div className="mt-4 max-w-xs">
-                <label className="block text-sm font-bold text-gray-700 mb-1">قيمة 1 يورو (€) بالدينار الجزائري:</label>
-                <input
-                  type="number"
-                  min={50}
-                  max={999}
-                  value={customEurRate}
-                  onChange={(e) => setCustomEurRate(e.target.value)}
-                  className="w-full border rounded-xl p-2.5 text-left font-bold"
-                  dir="ltr"
-                />
-              </div>
-            )}
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">إعدادات الموقع العامة</h1>
           </div>
 
-<button 
+          <button 
             onClick={handleSave} disabled={saving}
-            className="bg-primary hover:bg-gold text-white px-8 py-3 rounded-xl font-bold transition-colors flex items-center gap-2 disabled:opacity-50 shadow-lg shadow-primary/20"
+            className="w-full sm:w-auto justify-center bg-primary hover:bg-gold text-white px-8 py-3 rounded-xl font-bold transition-colors flex items-center gap-2 disabled:opacity-50 shadow-lg shadow-primary/20"
           >
             <Save className="w-5 h-5" /> {saving ? 'جاري الحفظ...' : 'حفظ التعديلات'}
           </button>
         </div>
 
         <div className="space-y-6">
+          {/* Exchange Rate Settings (DZD -> EUR) */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 sm:p-6">
+            <h2 className="text-lg sm:text-xl font-bold text-gray-800 mb-2">سعر الصرف التلقائي (دينار ⇄ يورو)</h2>
+            <p className="text-sm text-gray-500 mb-4">
+              أدخل الأسعار بالدينار الجزائري فقط في لوحة التحكم، وسيتم تحويلها تلقائياً لليورو للزوار.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <label className="flex items-start sm:items-center gap-3 p-4 rounded-xl border cursor-pointer hover:bg-gray-50">
+                <input
+                  type="radio"
+                  name="exchangeRateMode"
+                  checked={exchangeRateMode === 'auto'}
+                  onChange={() => setExchangeRateMode('auto')}
+                  className="w-5 h-5 mt-0.5 sm:mt-0 text-primary shrink-0"
+                />
+                <div className="min-w-0">
+                  <span className="font-bold block text-gray-800">تلقائي يومي (API)</span>
+                  <span className="text-xs text-gray-500">يجلب سعر الصرف اليومي تلقائياً عبر الإنترنت.</span>
+                </div>
+              </label>
+              <label className="flex items-start sm:items-center gap-3 p-4 rounded-xl border cursor-pointer hover:bg-gray-50">
+                <input
+                  type="radio"
+                  name="exchangeRateMode"
+                  checked={exchangeRateMode === 'manual'}
+                  onChange={() => setExchangeRateMode('manual')}
+                  className="w-5 h-5 mt-0.5 sm:mt-0 text-primary shrink-0"
+                />
+                <div className="min-w-0">
+                  <span className="font-bold block text-gray-800">سعر مخصص (مثل سعر السكوار)</span>
+                  <span className="text-xs text-gray-500">تحدد قيمة 1 يورو بالدينار بنفسك.</span>
+                </div>
+              </label>
+            </div>
+            {exchangeRateMode === 'manual' && (
+              <div className="mt-4 w-full sm:max-w-xs">
+                <label className="block text-sm font-bold text-gray-700 mb-1.5">قيمة 1 يورو (€) بالدينار الجزائري:</label>
+                <input
+                  type="number"
+                  min={50}
+                  max={999}
+                  value={customEurRate}
+                  onChange={(e) => setCustomEurRate(e.target.value)}
+                  className="w-full border border-gray-300 rounded-xl p-3 text-left font-bold text-gray-900 bg-gray-50 focus:bg-white focus:border-primary outline-none"
+                  dir="ltr"
+                />
+              </div>
+            )}
+          </div>
           {/* Logo Upload */}
           <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
             <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">

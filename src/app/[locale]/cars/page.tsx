@@ -52,7 +52,9 @@ function CarCard({
   const isRtl = locale === 'ar';
   const baseDzd = parseNumericPrice(item.startingPrice);
   const discountDzd = parseNumericPrice(item.discountPrice);
-  const finalDzd = discountDzd > 0 ? Math.max(0, baseDzd - discountDzd) : baseDzd;
+  const hasDiscount = discountDzd > 0 && baseDzd > discountDzd;
+  const finalDzd = hasDiscount ? baseDzd - discountDzd : baseDzd;
+  const baseEur = convertDzdToEur(baseDzd, dzdPerEur);
   const autoEur = convertDzdToEur(finalDzd, dzdPerEur);
 
   const rawPrimary = item.nameAr || item.nameFr || '';
@@ -99,6 +101,11 @@ function CarCard({
               {item.brand}
             </span>
           )}
+          {hasDiscount && (
+            <span className="absolute top-2.5 right-2.5 bg-red-600 text-white text-[11px] font-black px-2.5 py-1 rounded-md shadow">
+              {isRtl ? 'تخفيض' : locale === 'en' ? 'PROMO' : 'PROMO'}
+            </span>
+          )}
           {item.isInstallment && (
             <span className="absolute bottom-2.5 right-2.5 bg-gold text-[#111318] text-[10px] font-black px-2 py-0.5 rounded-md shadow">
               {isRtl ? 'تقسيط' : locale === 'en' ? 'Installment' : 'Facilité'}
@@ -121,7 +128,12 @@ function CarCard({
             {/* Circular Yellow/Gold EUR Badge (auto-converted from DZD!) */}
             {autoEur > 0 && (
               <div className="w-16 h-16 rounded-full bg-[#facc15] text-[#111318] flex flex-col items-center justify-center shrink-0 shadow-[0_0_20px_rgba(250,204,21,0.35)] font-black leading-none">
-                <span className="text-lg sm:text-xl" dir="ltr">
+                {hasDiscount && baseEur > 0 && (
+                  <span className="text-[10px] line-through opacity-70 leading-none" dir="ltr">
+                    {baseEur}€
+                  </span>
+                )}
+                <span className={hasDiscount ? 'text-base sm:text-lg' : 'text-lg sm:text-xl'} dir="ltr">
                   {autoEur}€
                 </span>
                 <span className="text-[10px] font-bold opacity-80">
@@ -134,9 +146,11 @@ function CarCard({
           {/* Bold Red/Crimson Price Ribbon (respects currency toggle) */}
           <div className="flex flex-wrap items-center gap-3">
             <div className="inline-flex items-baseline gap-2 bg-[#c81e2b] text-white px-4 py-2 rounded-xl shadow-md">
-              {discountDzd > 0 && baseDzd > discountDzd && (
+              {hasDiscount && (
                 <span className="text-xs line-through opacity-75" dir="ltr">
-                  {baseDzd.toLocaleString('fr-DZ')}
+                  {currency === 'EUR' && baseEur > 0
+                    ? `${baseEur} €`
+                    : `${baseDzd.toLocaleString('fr-DZ')} ${isRtl ? 'د.ج' : 'DA'}`}
                 </span>
               )}
               <span className="text-xl sm:text-2xl font-black tracking-tight" dir="ltr">

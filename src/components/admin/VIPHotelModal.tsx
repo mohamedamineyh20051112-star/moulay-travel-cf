@@ -266,6 +266,9 @@ export default function VIPHotelModal({
         en: (c.en || '').trim() || translatedCustEn[i] || c.fr || c.ar || '',
       }));
 
+      const derivedHasFood = enabledFeatures.includes('gourmet_food');
+      const derivedHasTransport = enabledFeatures.includes('private_transfer');
+
       const hotelData = {
         destinationId: finalDestId,
         nameAr,
@@ -283,11 +286,12 @@ export default function VIPHotelModal({
         roomImages,
         foodImages,
         roomPrices: cleanRooms,
-        hasFood,
+        hasFood: derivedHasFood,
         foodTypeAr,
         foodTypeFr: finalFoodFr,
         foodTypeEn: finalFoodEn,
-        hasTransport,
+        hasTransport: derivedHasTransport,
+        featuresConfigured: true,
         enabledFeatures,
         customFeatures: cleanCustomFeatures,
         program: cleanProgram,
@@ -599,38 +603,30 @@ export default function VIPHotelModal({
                 </div>
 
                 <div className="pt-6 border-t space-y-4">
-                  <h3 className="font-bold">الإطعام والنقل</h3>
-                  <label className="flex items-center gap-2 cursor-pointer p-3 border rounded-xl hover:bg-gray-50">
-                    <input type="checkbox" checked={hasFood} onChange={(e) => setHasFood(e.target.checked)} className="w-5 h-5 text-primary" />
-                    <span className="font-medium">الإطعام متوفر في هذا العرض؟</span>
-                  </label>
-                  {hasFood && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pr-2">
-                      <div>
-                        <label className="block text-sm mb-1">نوع الإطعام (عربي)</label>
-                        <input value={foodTypeAr} onChange={(e) => setFoodTypeAr(e.target.value)} className="w-full border rounded-lg p-2" />
-                      </div>
-                      <div>
-                        <label className="block text-sm mb-1">نوع الإطعام (فرنسي)</label>
-                        <input value={foodTypeFr} onChange={(e) => setFoodTypeFr(e.target.value)} className="w-full border rounded-lg p-2" dir="ltr" />
-                      </div>
-                    </div>
-                  )}
-
-                  <label className="flex items-center gap-2 cursor-pointer p-3 border rounded-xl hover:bg-gray-50">
-                    <input type="checkbox" checked={hasTransport} onChange={(e) => setHasTransport(e.target.checked)} className="w-5 h-5 text-primary" />
-                    <span className="font-medium">توفير خدمات النقل الخاص (Transfert VIP)</span>
-                  </label>
-                </div>
-
-                <div className="pt-6 border-t">
                   <FeaturesToggleEditor
                     category="vip_trips"
                     enabledFeatures={enabledFeatures}
                     customFeatures={customFeatures}
-                    onChangeEnabled={setEnabledFeatures}
+                    onChangeEnabled={(ids) => {
+                      setEnabledFeatures(ids);
+                      setHasFood(ids.includes('gourmet_food'));
+                      setHasTransport(ids.includes('private_transfer'));
+                    }}
                     onChangeCustom={setCustomFeatures}
                   />
+
+                  {enabledFeatures.includes('gourmet_food') && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-50 p-4 rounded-xl border border-gray-200">
+                      <div>
+                        <label className="block text-sm font-medium mb-1">تفاصيل الإطعام (عربي - اختياري)</label>
+                        <input value={foodTypeAr} onChange={(e) => setFoodTypeAr(e.target.value)} className="w-full border rounded-lg p-2 bg-white" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-1">تفاصيل الإطعام (فرنسي - اختياري)</label>
+                        <input value={foodTypeFr} onChange={(e) => setFoodTypeFr(e.target.value)} className="w-full border rounded-lg p-2 bg-white" dir="ltr" />
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             )}

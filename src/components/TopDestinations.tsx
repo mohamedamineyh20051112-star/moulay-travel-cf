@@ -4,7 +4,6 @@ import { useLocale } from "next-intl";
 import { motion } from "framer-motion";
 import { ChevronRight, Crown, Compass, Waves } from "lucide-react";
 import Link from "next/link";
-import { formatConvertedPrice, useCurrencyStore } from "@/store/useCurrencyStore";
 import { useState, useEffect } from "react";
 import { db } from "@/lib/firebase";
 import { collection, getDocs } from "firebase/firestore";
@@ -22,7 +21,6 @@ interface ResolvedTopDestination {
   organizedCount: number;
   hammamCount: number;
   totalOffers: number;
-  minPriceDzd: number;
   targetHref: string;
 }
 
@@ -36,7 +34,6 @@ function TopDestinationCard({
   index: number;
 }) {
   const isRtl = locale === "ar";
-  const { currency, dzdPerEur } = useCurrencyStore();
 
   const title = useAutoTranslate(
     dest.nameAr,
@@ -124,15 +121,6 @@ function TopDestinationCard({
                 {title}
               </h3>
             </div>
-
-            {dest.minPriceDzd > 0 && (
-              <p className="text-sm font-bold text-gray-500 mt-1" dir="ltr">
-                {isRtl ? "ابتداءً من " : locale === "en" ? "From " : "À partir de "}
-                <span className="text-primary">
-                  {formatConvertedPrice(dest.minPriceDzd, currency, dzdPerEur, locale, null)}
-                </span>
-              </p>
-            )}
           </div>
           <ChevronRight
             className={`w-5 h-5 text-[#1e3a5f] group-hover:text-gold shrink-0 transition-transform ${
@@ -187,23 +175,16 @@ export default function TopDestinations() {
 
         const stats: Record<
           string,
-          { vipCount: number; organizedCount: number; hammamCount: number; minPriceDzd: number }
+          { vipCount: number; organizedCount: number; hammamCount: number }
         > = {};
 
         const recordOffer = (docData: any, key: "vipCount" | "organizedCount" | "hammamCount") => {
           const destId = docData.destinationId;
           if (!destId) return;
           if (!stats[destId]) {
-            stats[destId] = { vipCount: 0, organizedCount: 0, hammamCount: 0, minPriceDzd: 0 };
+            stats[destId] = { vipCount: 0, organizedCount: 0, hammamCount: 0 };
           }
           stats[destId][key] += 1;
-
-          const base = Number(docData.price || 0);
-          const disc = Number(docData.discountPrice || 0);
-          const eff = disc > 0 && base > disc ? base - disc : base;
-          if (eff > 0 && (stats[destId].minPriceDzd === 0 || eff < stats[destId].minPriceDzd)) {
-            stats[destId].minPriceDzd = eff;
-          }
         };
 
         vipHotelsSnap.docs.forEach((d) => recordOffer(d.data(), "vipCount"));
@@ -236,7 +217,6 @@ export default function TopDestinations() {
             organizedCount: s.organizedCount,
             hammamCount: s.hammamCount,
             totalOffers,
-            minPriceDzd: s.minPriceDzd,
             targetHref,
           });
         });
