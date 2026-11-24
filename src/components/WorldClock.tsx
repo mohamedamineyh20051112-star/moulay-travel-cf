@@ -175,7 +175,14 @@ export default function WorldClock() {
   const mainParts = getTimeParts(time, MAIN_CLOCK.timezone);
 
   return (
-    <section className="py-16 sm:py-20 bg-[#f8f6f1] border-y border-[#e5d5b5]/60" dir={isRtl ? 'rtl' : 'ltr'}>
+    <motion.section
+      initial={{ opacity: 0, y: 24 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.15 }}
+      transition={{ duration: 0.55 }}
+      className="py-16 sm:py-20 bg-[#f8f6f1] border-y border-[#e5d5b5]/60"
+      dir={isRtl ? 'rtl' : 'ltr'}
+    >
       <div className="container mx-auto px-4 max-w-4xl">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -222,6 +229,6 @@ export default function WorldClock() {
           </div>
         </motion.div>
       </div>
-    </section>
+    </motion.section>
   );
 }

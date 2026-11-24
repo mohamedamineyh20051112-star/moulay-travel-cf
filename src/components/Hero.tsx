@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import { collection, getDocs } from "firebase/firestore";
@@ -10,12 +10,18 @@ const DEFAULT_DESKTOP_BACKGROUNDS = [
   "/hero-desktop.jpg",
   "/hero-desktop-2.jpg",
   "/hero-desktop-3.jpg",
+  "/hero-desktop-4.jpg",
+  "/hero-desktop-5.jpg",
+  "/hero-desktop-6.jpg",
 ];
 
 const DEFAULT_MOBILE_BACKGROUNDS = [
   "/hero-mobile.jpg",
   "/hero-mobile-2.jpg",
   "/hero-mobile-3.jpg",
+  "/hero-mobile-4.jpg",
+  "/hero-mobile-5.jpg",
+  "/hero-mobile-6.jpg",
 ];
 
 function getNextVisitIndex(storageKey: string, length: number): number {
@@ -35,6 +41,7 @@ export default function Hero({ locale }: { locale: string }) {
   const [mobileImages, setMobileImages] = useState<string[]>(DEFAULT_MOBILE_BACKGROUNDS);
   const [desktopIdx, setDesktopIdx] = useState<number>(0);
   const [mobileIdx, setMobileIdx] = useState<number>(0);
+  const [manualTick, setManualTick] = useState<number>(0);
 
   // Rotate background on every new visit
   useEffect(() => {
@@ -62,12 +69,12 @@ export default function Hero({ locale }: { locale: string }) {
         });
 
         if (customDesktop.length > 0) {
-          const merged = [...customDesktop, ...DEFAULT_DESKTOP_BACKGROUNDS];
+          const merged = Array.from(new Set([...customDesktop, ...DEFAULT_DESKTOP_BACKGROUNDS]));
           setDesktopImages(merged);
           setDesktopIdx((prev) => prev % merged.length);
         }
         if (customMobile.length > 0) {
-          const merged = [...customMobile, ...DEFAULT_MOBILE_BACKGROUNDS];
+          const merged = Array.from(new Set([...customMobile, ...DEFAULT_MOBILE_BACKGROUNDS]));
           setMobileImages(merged);
           setMobileIdx((prev) => prev % merged.length);
         }
@@ -81,20 +88,53 @@ export default function Hero({ locale }: { locale: string }) {
     };
   }, []);
 
-  // Gentle automatic slideshow every 9 seconds
+  // Gentle automatic slideshow every 9 seconds (resets after manual tap)
   useEffect(() => {
     const timer = setInterval(() => {
       setDesktopIdx((prev) => (prev + 1) % desktopImages.length);
       setMobileIdx((prev) => (prev + 1) % mobileImages.length);
     }, 9000);
     return () => clearInterval(timer);
-  }, [desktopImages.length, mobileImages.length]);
+  }, [desktopImages.length, mobileImages.length, manualTick]);
+
+  // Switch hero background immediately whenever the user clicks/taps on the hero
+  const handleHeroClick = useCallback(
+    (e: React.MouseEvent<HTMLElement>) => {
+      const target = e.target as HTMLElement | null;
+      if (target && target.closest("a, button, input, select, textarea")) {
+        return;
+      }
+      setDesktopIdx((prev) => {
+        const next = (prev + 1) % desktopImages.length;
+        try {
+          window.localStorage.setItem("moulay_hero_desktop_idx", String(next));
+        } catch {
+          // Ignore storage error
+        }
+        return next;
+      });
+      setMobileIdx((prev) => {
+        const next = (prev + 1) % mobileImages.length;
+        try {
+          window.localStorage.setItem("moulay_hero_mobile_idx", String(next));
+        } catch {
+          // Ignore storage error
+        }
+        return next;
+      });
+      setManualTick((t) => t + 1);
+    },
+    [desktopImages.length, mobileImages.length]
+  );
 
   const activeDesktopSrc = desktopImages[desktopIdx % desktopImages.length];
   const activeMobileSrc = mobileImages[mobileIdx % mobileImages.length];
 
   return (
-    <section className="relative w-full h-[100dvh] min-h-[600px] flex items-center justify-center overflow-hidden bg-[#0f172a]">
+    <section
+      onClick={handleHeroClick}
+      className="relative w-full h-[100dvh] min-h-[600px] flex items-center justify-center overflow-hidden bg-[#0f172a] cursor-pointer select-none"
+    >
       {/* Rotating Desktop & Mobile Backgrounds */}
       <div className="absolute inset-0 z-0">
         {/* Desktop */}
@@ -102,10 +142,10 @@ export default function Hero({ locale }: { locale: string }) {
           <AnimatePresence mode="sync">
             <motion.div
               key={activeDesktopSrc}
-              initial={{ opacity: 0, scale: 1.05 }}
+              initial={{ opacity: 0, scale: 1.04 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 1.4, ease: "easeInOut" }}
+              transition={{ duration: 1.1, ease: "easeInOut" }}
               className="absolute inset-0"
             >
               <Image
@@ -125,10 +165,10 @@ export default function Hero({ locale }: { locale: string }) {
           <AnimatePresence mode="sync">
             <motion.div
               key={activeMobileSrc}
-              initial={{ opacity: 0, scale: 1.05 }}
+              initial={{ opacity: 0, scale: 1.04 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 1.4, ease: "easeInOut" }}
+              transition={{ duration: 1.1, ease: "easeInOut" }}
               className="absolute inset-0"
             >
               <Image
@@ -203,26 +243,6 @@ export default function Hero({ locale }: { locale: string }) {
                   : "Où que vous soyez"}
             </p>
           </motion.div>
-        </div>
-
-        {/* Subtle Slide Indicators */}
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2">
-          {desktopImages.map((_, i) => (
-            <button
-              key={i}
-              type="button"
-              aria-label={`Slide ${i + 1}`}
-              onClick={() => {
-                setDesktopIdx(i);
-                setMobileIdx(i % mobileImages.length);
-              }}
-              className={`h-2 rounded-full transition-all duration-500 ${
-                desktopIdx % desktopImages.length === i
-                  ? "w-8 bg-gold shadow-[0_0_10px_rgba(212,175,55,0.8)]"
-                  : "w-2 bg-white/45 hover:bg-white/75"
-              }`}
-            />
-          ))}
         </div>
       </div>
     </section>

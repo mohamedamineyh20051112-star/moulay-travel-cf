@@ -13,34 +13,38 @@ import {
   Camera,
   Utensils,
   Info,
-  BedDouble,
   ChevronLeft,
   Bus,
   Star,
   Waves,
-  Sparkles,
-  Wifi,
-  Car,
-  Bell,
   Home,
   Link as LinkIcon,
   Coins,
   Sun,
+  Sparkles,
 } from 'lucide-react';
 import Link from 'next/link';
 import DynamicForm from '@/components/DynamicForm';
 import { defaultFormsConfig } from '@/data/defaultForms';
-import { normalizeDestination } from '@/lib/normalize';
+import { normalizeDestination, sanitizeExternalUrl } from '@/lib/normalize';
 import { convertDzdToEur, formatConvertedPrice, useCurrencyStore } from '@/store/useCurrencyStore';
+import { useSiteContact, buildWhatsAppUrl } from '@/lib/useSiteContact';
+import { useAutoTranslate } from '@/lib/translateClient';
+import { resolveItemFeatures } from '@/data/serviceFeatures';
+import FeatureIcon from '@/components/FeatureIcon';
 
 export default function HammamDetailsPage({
   params,
 }: {
   params: { locale: string; destinationId: string; hammamId: string };
 }) {
-  const locale = params.locale as 'ar' | 'fr' | 'en';
+  const locale = (params.locale === 'en' ? 'en' : params.locale === 'fr' ? 'fr' : 'ar') as
+    | 'ar'
+    | 'fr'
+    | 'en';
   const isRtl = locale === 'ar';
   const { currency, dzdPerEur } = useCurrencyStore();
+  const { whatsapp } = useSiteContact();
 
   const [destination, setDestination] = useState<any>(null);
   const [hammam, setHammam] = useState<any>(null);
@@ -48,6 +52,44 @@ export default function HammamDetailsPage({
   const [view, setView] = useState<'details' | 'form'>('details');
 
   const topRef = useRef<HTMLDivElement>(null);
+
+  const hammamName = useAutoTranslate(
+    hammam?.nameAr,
+    locale,
+    locale === 'en' ? hammam?.nameEn || hammam?.nameFr : locale === 'fr' ? hammam?.nameFr : hammam?.nameAr
+  );
+  const destName = useAutoTranslate(
+    destination?.nameAr,
+    locale,
+    locale === 'en'
+      ? destination?.nameEn || destination?.nameFr
+      : locale === 'fr'
+        ? destination?.nameFr
+        : destination?.nameAr
+  );
+  const typeLabel = useAutoTranslate(
+    hammam?.typeAr || 'محطة معدنية / منتجع',
+    locale,
+    locale === 'en' ? hammam?.typeEn || hammam?.typeFr : locale === 'fr' ? hammam?.typeFr : hammam?.typeAr
+  );
+  const descriptionText = useAutoTranslate(
+    hammam?.descriptionAr,
+    locale,
+    locale === 'en'
+      ? hammam?.descriptionEn || hammam?.descriptionFr
+      : locale === 'fr'
+        ? hammam?.descriptionFr
+        : hammam?.descriptionAr
+  );
+  const foodTypeText = useAutoTranslate(
+    hammam?.foodTypeAr,
+    locale,
+    locale === 'en'
+      ? hammam?.foodTypeEn || hammam?.foodTypeFr
+      : locale === 'fr'
+        ? hammam?.foodTypeFr
+        : hammam?.foodTypeAr
+  );
 
   const scrollToTop = () => {
     setTimeout(() => {
@@ -93,16 +135,11 @@ export default function HammamDetailsPage({
     );
   }
 
-  const hammamName = locale !== 'ar' && hammam.nameFr ? hammam.nameFr : hammam.nameAr || '';
-  const destName = locale !== 'ar' && destination?.nameFr ? destination.nameFr : destination?.nameAr || '';
-  const typeLabel =
-    locale !== 'ar' && hammam.typeFr
-      ? hammam.typeFr
-      : hammam.typeAr || (isRtl ? 'محطة معدنية / منتجع' : 'Station thermale / Resort');
   const finalDzd =
     hammam.discountPrice && Number(hammam.price) > Number(hammam.discountPrice)
       ? Number(hammam.price) - Number(hammam.discountPrice)
       : Number(hammam.price || 0);
+  const safeMapsUrl = sanitizeExternalUrl(hammam.googleMapsLink);
 
   const formConfig = JSON.parse(JSON.stringify(defaultFormsConfig['hammams']));
   formConfig.title = {
@@ -154,17 +191,7 @@ export default function HammamDetailsPage({
         ? hammam.rooms
         : [];
 
-  // Circular Golden Services & Prestations Icons Strip (matching reference 1000048879.jpg)
-  const serviceIcons = [
-    { icon: BedDouble, ar: 'إقامة مريحة', fr: 'Hébergement', en: 'Rooms', active: true },
-    { icon: Utensils, ar: 'مطعم وإطعام', fr: 'Restaurant', en: 'Restaurant', active: Boolean(hammam.hasFood ?? true) },
-    { icon: Waves, ar: 'مياه معدنية', fr: 'Thermalisme', en: 'Thermal Spa', active: true },
-    { icon: Bus, ar: 'النقل متوفر', fr: 'Transport', en: 'Transport', active: Boolean(hammam.hasTransport) },
-    { icon: Wifi, ar: 'واي فاي', fr: 'Wi-Fi', en: 'Wi-Fi', active: true },
-    { icon: Car, ar: 'موقف سيارات', fr: 'Parking', en: 'Parking', active: true },
-    { icon: Bell, ar: 'استقبال 24/24', fr: 'Réception 24h/24', en: '24/7 Reception', active: true },
-    { icon: Sparkles, ar: 'استجمام وراحة', fr: 'Détente', en: 'Wellness', active: true },
-  ].filter((s) => s.active);
+  const enabledFeatures = resolveItemFeatures('hammams', hammam, locale);
 
   return (
     <div className="pt-20 md:pt-28 pb-32 min-h-screen bg-[#f5f1e8] px-3 sm:px-6" dir={isRtl ? 'rtl' : 'ltr'}>
@@ -260,9 +287,9 @@ export default function HammamDetailsPage({
               </div>
             )}
 
-            {hammam.googleMapsLink && (
+            {safeMapsUrl && (
               <a
-                href={hammam.googleMapsLink}
+                href={safeMapsUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center bg-white hover:bg-[#faf3e0] rounded-2xl border border-[#e5d5b5] p-2.5 shadow-sm gap-3 transition-colors"
@@ -287,7 +314,7 @@ export default function HammamDetailsPage({
                     {isRtl ? 'ابتداءً من' : locale === 'en' ? 'Starting from' : 'À partir de'}
                   </p>
                   <p className="text-xl sm:text-2xl font-black text-[#2b1808]" dir="ltr">
-                    {formatConvertedPrice(finalDzd, currency, dzdPerEur, locale, hammam.priceEuro)}
+                    {formatConvertedPrice(finalDzd, currency, dzdPerEur, locale, null)}
                   </p>
                 </div>
               </div>
@@ -333,39 +360,39 @@ export default function HammamDetailsPage({
           </div>
         </div>
 
-        {/* Circular Golden NOS SERVICES & PRESTATIONS Icon Strip (matching reference 1000048879.jpg) */}
-        <div className="px-5 sm:px-8 py-6 border-y border-[#e5d5b5] bg-white/60">
-          <div className="flex justify-center mb-6">
-            <span className="inline-block bg-[#234328] text-white px-6 py-2 rounded-full text-xs sm:text-sm font-black tracking-widest uppercase shadow">
-              {isRtl ? 'خدماتنا ومرافقنا' : locale === 'en' ? 'OUR SERVICES & AMENITIES' : 'NOS SERVICES & PRESTATIONS'}
-            </span>
-          </div>
-          <div className="grid grid-cols-4 sm:grid-cols-4 md:grid-cols-8 gap-4 justify-items-center">
-            {serviceIcons.map((srv, idx) => {
-              const Icon = srv.icon;
-              return (
-                <div key={idx} className="flex flex-col items-center text-center gap-2">
+        {/* Toggleable Golden NOS SERVICES & PRESTATIONS Icon Strip */}
+        {enabledFeatures.length > 0 && (
+          <div className="px-5 sm:px-8 py-6 border-y border-[#e5d5b5] bg-white/60">
+            <div className="flex justify-center mb-6">
+              <span className="inline-flex items-center gap-2 bg-[#234328] text-white px-6 py-2 rounded-full text-xs sm:text-sm font-black tracking-widest uppercase shadow">
+                <Sparkles className="w-4 h-4 text-[#d4af37]" />
+                {isRtl ? 'خدماتنا ومرافقنا' : locale === 'en' ? 'OUR SERVICES & AMENITIES' : 'NOS SERVICES & PRESTATIONS'}
+              </span>
+            </div>
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-4 justify-items-center">
+              {enabledFeatures.map((feat) => (
+                <div key={feat.id} className="flex flex-col items-center text-center gap-2">
                   <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br from-[#d4af37] via-[#b8892d] to-[#8f6619] text-white flex items-center justify-center shadow-md ring-4 ring-[#f5ecd4]">
-                    <Icon className="w-6 h-6 sm:w-7 sm:h-7" />
+                    <FeatureIcon name={feat.icon} className="w-6 h-6 sm:w-7 sm:h-7" />
                   </div>
                   <span className="text-[11px] sm:text-xs font-bold text-[#2b1808] leading-tight">
-                    {locale === 'ar' ? srv.ar : locale === 'en' ? srv.en : srv.fr}
+                    {feat.label}
                   </span>
                 </div>
-              );
-            })}
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Content Details */}
         <div className="p-5 sm:p-8 space-y-8">
-          {(hammam.descriptionAr || hammam.descriptionFr) && (
+          {descriptionText && (
             <div className="bg-white p-6 rounded-2xl border border-[#e5d5b5] shadow-sm text-gray-700 leading-relaxed whitespace-pre-line">
               <h4 className="text-[#3a210c] font-bold mb-3 flex items-center gap-2">
                 <Info className="w-5 h-5 text-[#c59a3f]" />{' '}
                 {isRtl ? 'لمحة عن العرض' : locale === 'en' ? 'Overview' : "Aperçu de l'offre"}
               </h4>
-              {locale !== 'ar' && hammam.descriptionFr ? hammam.descriptionFr : hammam.descriptionAr || ''}
+              {descriptionText}
             </div>
           )}
 
@@ -381,7 +408,7 @@ export default function HammamDetailsPage({
                 <table className="w-full text-center text-sm sm:text-base">
                   <thead className="bg-[#f5ecd4] text-[#3a210c]">
                     <tr>
-                      <th className="py-3.5 px-4 font-bold">{isRtl ? 'النوع' : 'Prestation'}</th>
+                      <th className="py-3.5 px-4 font-bold">{isRtl ? 'النوع' : locale === 'en' ? 'Service' : 'Prestation'}</th>
                       <th className="py-3.5 px-4 font-bold border-s border-[#e5d5b5]">
                         {isRtl ? 'السعر (دج)' : 'Prix (DZD)'}
                       </th>
@@ -393,11 +420,15 @@ export default function HammamDetailsPage({
                   <tbody className="text-gray-700 font-semibold">
                     {roomList.map((room: any, idx: number) => {
                       const dzdVal = Number(room.priceDzd || 0);
-                      const eurVal = Number(room.priceEur || 0) || convertDzdToEur(dzdVal, dzdPerEur);
+                      const eurVal = convertDzdToEur(dzdVal, dzdPerEur);
                       return (
                         <tr key={idx} className="border-t border-gray-100 hover:bg-[#fdfaf2]">
                           <td className="py-3.5 px-4">
-                            {locale !== 'ar' ? room.typeFr || room.typeAr : room.typeAr || room.typeFr}
+                            {locale === 'en'
+                              ? room.typeEn || room.typeFr || room.typeAr
+                              : locale === 'fr'
+                                ? room.typeFr || room.typeAr
+                                : room.typeAr || room.typeFr}
                           </td>
                           <td className="py-3.5 px-4 border-s border-[#e5d5b5]" dir="ltr">
                             {dzdVal > 0 ? `${dzdVal.toLocaleString('fr-DZ')} ${isRtl ? 'د.ج' : 'DA'}` : '-'}
@@ -434,11 +465,11 @@ export default function HammamDetailsPage({
 
             <div className="bg-white p-5 rounded-2xl border border-[#e5d5b5] shadow-sm">
               <h4 className="text-[#3a210c] font-bold mb-3 flex items-center gap-2">
-                <Utensils className="w-5 h-5 text-[#c59a3f]" /> {isRtl ? 'الإطعام' : 'Restauration'}
+                <Utensils className="w-5 h-5 text-[#c59a3f]" /> {isRtl ? 'الإطعام' : locale === 'en' ? 'Catering' : 'Restauration'}
               </h4>
               {hammam.hasFood ? (
                 <p className="font-bold text-gray-800">
-                  {locale !== 'ar' && hammam.foodTypeFr ? hammam.foodTypeFr : hammam.foodTypeAr || (isRtl ? 'متوفر' : 'Inclus')}
+                  {foodTypeText || (isRtl ? 'متوفر' : locale === 'en' ? 'Included' : 'Inclus')}
                 </p>
               ) : (
                 <p className="text-gray-500">{isRtl ? 'غير متوفر' : locale === 'en' ? 'Not available' : 'Non disponible'}</p>
@@ -450,7 +481,7 @@ export default function HammamDetailsPage({
           {Array.isArray(hammam.program) && hammam.program.length > 0 && (
             <div className="bg-white p-6 rounded-2xl border border-[#e5d5b5] shadow-sm">
               <h4 className="text-[#3a210c] font-bold mb-4 flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-[#c59a3f]" /> {isRtl ? 'برنامج الرحلة' : 'Programme'}
+                <Calendar className="w-5 h-5 text-[#c59a3f]" /> {isRtl ? 'برنامج الرحلة' : locale === 'en' ? 'Program' : 'Programme'}
               </h4>
               <ul className="space-y-3">
                 {hammam.program.map((p: any, idx: number) => (
@@ -459,7 +490,13 @@ export default function HammamDetailsPage({
                       {idx + 1}
                     </div>
                     <div className="bg-[#fdfaf2] p-3 rounded-xl flex-1 border border-[#e5d5b5]/60 text-sm text-gray-700 font-medium">
-                      {typeof p === 'string' ? p : locale !== 'ar' && p.fr ? p.fr : p.ar || p.fr || ''}
+                      {typeof p === 'string'
+                        ? p
+                        : locale === 'en'
+                          ? p.en || p.fr || p.ar || ''
+                          : locale === 'fr'
+                            ? p.fr || p.ar || ''
+                            : p.ar || p.fr || ''}
                     </div>
                   </li>
                 ))}
@@ -472,7 +509,7 @@ export default function HammamDetailsPage({
         <div className="fixed md:absolute bottom-0 left-0 w-full bg-white border-t border-[#e5d5b5] p-3.5 sm:p-4 shadow-[0_-10px_20px_rgba(0,0,0,0.06)] z-50 md:rounded-b-[2rem]">
           <div className="max-w-4xl mx-auto flex gap-3 sm:gap-4">
             <a
-              href={`https://wa.me/213659716373?text=${encodeURIComponent(waText)}`}
+              href={buildWhatsAppUrl(whatsapp, waText)}
               target="_blank"
               rel="noopener noreferrer"
               className="flex-1 bg-[#25D366] hover:bg-[#1da851] text-white py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 transition shadow-md text-sm md:text-base"

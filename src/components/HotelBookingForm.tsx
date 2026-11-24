@@ -9,6 +9,7 @@ import {
   Info, Coffee, CheckCircle, Phone, ArrowLeft, Send, Users, BedDouble, User, Mail 
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { buildWhatsAppUrl, useSiteContact } from "@/lib/useSiteContact";
 
 const formTranslations = {
   fr: {
@@ -36,7 +37,7 @@ const formTranslations = {
     hotelType: "Type d'établissement",
     hotelOptions: ["Hôtel", "Complexe touristique", "Appartement", "Villa"],
     category: "Catégorie souhaitée",
-    categoryOptions: ["Ã‰conomique", "Standard", "Luxe"],
+    categoryOptions: ["Économique", "Standard", "Luxe"],
     pensionType: "Type de pension",
     pensionOptions: ["Sans repas", "Petit-déjeuner", "Demi-pension", "Pension complète", "All inclusive"],
     preferencesTitle: "Préférences et Autres",
@@ -144,6 +145,7 @@ const formTranslations = {
 
 export default function HotelBookingForm({ locale }: { locale: string }) {
   const { userData } = useAuth();
+  const siteContact = useSiteContact();
   const t = formTranslations[locale as keyof typeof formTranslations] || formTranslations.ar;
   const isRtl = locale === "ar";
   
@@ -297,7 +299,14 @@ export default function HotelBookingForm({ locale }: { locale: string }) {
             {isRtl ? "طلب تسعيرة / حجز" : locale === "en" ? "Request Booking / Quote" : "Demander une réservation"}
           </button>
           <a
-            href={`https://wa.me/213555536525?text=${encodeURIComponent(isRtl ? "مرحباً، أود الاستفسار حول حجز فندق..." : "Bonjour, je voudrais me renseigner concernant la réservation d\'hôtel...")}`}
+            href={buildWhatsAppUrl(
+              siteContact.whatsapp,
+              isRtl
+                ? "مرحباً، أود الاستفسار حول حجز فندق..."
+                : locale === "en"
+                  ? "Hello, I would like to inquire about hotel booking..."
+                  : "Bonjour, je voudrais me renseigner concernant la réservation d'hôtel..."
+            )}
             target="_blank"
             rel="noopener noreferrer"
             className="bg-green-500 text-white hover:bg-green-600 py-4 px-8 rounded-xl font-bold transition shadow-md flex items-center justify-center gap-2 text-lg"

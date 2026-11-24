@@ -2,7 +2,7 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { User as UserIcon, LogOut, Mail, Phone, CreditCard, Tag, TrendingUp, DollarSign, Clock, AlertCircle } from 'lucide-react';
+import { User as UserIcon, LogOut, Mail, Phone, CreditCard, Tag, TrendingUp, DollarSign, Clock, AlertCircle, XCircle } from 'lucide-react';
 import { auth, db } from '@/lib/firebase';
 import { signOut } from 'firebase/auth';
 import { collection, query, where, getDocs } from 'firebase/firestore';
@@ -13,27 +13,28 @@ export default function MarketerDashboard({ params }: { params: { locale: string
   const [stats, setStats] = useState({ uses: 0, pendingCommission: 0, paidCommission: 0 });
   const [statsLoading, setStatsLoading] = useState(true);
 
+  const rawCommission = Number(userData?.commissionRate || 0);
+  const commissionRate = rawCommission > 0 ? rawCommission : 1000;
+
   useEffect(() => {
     if (!loading) {
       if (!user || userData?.role !== 'marketer') {
         router.push('/');
       } else if (userData?.status === 'approved' && userData?.promoCode) {
-        // Fetch stats if approved
-        fetchStats(userData.promoCode);
+        fetchStats(userData.promoCode, commissionRate);
       } else {
         setStatsLoading(false);
       }
     }
-  }, [user, userData, loading, router, params.locale]);
+  }, [user, userData, loading, router, params.locale, commissionRate]);
 
-  const fetchStats = async (promoCode: string) => {
+  const fetchStats = async (promoCode: string, rate: number) => {
     try {
       const q = query(collection(db, 'bookings'), where('promoCode', '==', promoCode));
       const snapshot = await getDocs(q);
       
-      let uses = snapshot.size;
-      // In a real app, calculate commissions based on booking statuses (completed vs pending)
-      let pendingCommission = uses * 2000; // Example: 2000 DZD per booking
+      const uses = snapshot.size;
+      const pendingCommission = uses * rate;
       
       setStats({ uses, pendingCommission, paidCommission: 0 });
     } catch (error) {
@@ -69,6 +70,14 @@ export default function MarketerDashboard({ params }: { params: { locale: string
             <div className="inline-flex items-center gap-2 bg-orange-50 text-orange-700 px-4 py-2 rounded-lg font-medium text-sm border border-orange-200">
               <AlertCircle className="w-4 h-4" /> يرجى الانتظار، سنقوم بتفعيل حسابك قريباً.
             </div>
+          </div>
+        ) : userData.status === 'rejected' ? (
+          <div className="bg-white rounded-3xl shadow-sm border border-red-200 p-8 text-center max-w-2xl mx-auto">
+            <div className="w-20 h-20 bg-red-100 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6">
+              <XCircle className="w-10 h-10" />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-800 mb-4">تم إيقاف أو رفض الحساب</h2>
+            <p className="text-gray-500 mb-4">عذراً {userData.name}، حساب المسوق الخاص بك موقوف أو مرفوض حالياً. يرجى التواصل مع الإدارة للمزيد من التفاصيل.</p>
           </div>
         ) : (
           <div className="space-y-6">

@@ -26,13 +26,14 @@ interface DynamicFormProps {
 
 export default function DynamicForm({ formId, config, locale }: DynamicFormProps) {
   const isRtl = locale === 'ar';
-  const [formData, setFormData] = useState<Record<string, string>>(() => {
+  const getInitialFormData = () => {
     const initial: Record<string, string> = {};
     config.fields.forEach(f => {
       if (f.defaultValue) initial[f.id] = f.defaultValue;
     });
     return initial;
-  });
+  };
+  const [formData, setFormData] = useState<Record<string, string>>(getInitialFormData);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<"idle" | "success" | "error">("idle");
 
@@ -80,7 +81,7 @@ export default function DynamicForm({ formId, config, locale }: DynamicFormProps
           {locale === 'ar' ? 'سيتواصل معك فريقنا قريباً لتأكيد التفاصيل.' : locale === 'fr' ? 'Notre équipe vous contactera bientôt.' : 'Our team will contact you soon.'}
         </p>
         <button 
-          onClick={() => { setSubmitStatus("idle"); setFormData({}); }}
+          onClick={() => { setSubmitStatus("idle"); setFormData(getInitialFormData()); }}
           className="bg-primary hover:bg-primary-dark text-white font-bold py-3 px-8 rounded-xl transition-all"
         >
           {locale === 'ar' ? 'إرسال طلب آخر' : locale === 'fr' ? 'Envoyer une autre demande' : 'Send another request'}

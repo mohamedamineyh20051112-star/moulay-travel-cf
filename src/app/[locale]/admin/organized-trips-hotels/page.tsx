@@ -37,14 +37,17 @@ function OTHotelsAdminContent({ params }: { params: { locale: string } }) {
     }
   };
 
-  const handleCreateDestination = async (data: {nameAr: string, nameFr: string, image: string}) => {
+  const handleCreateDestination = async (data: { nameAr: string; nameFr: string; nameEn?: string; image: string; countryCode?: string }) => {
     try {
-      const docRef = await addDoc(collection(db, 'services_destinations'), {
+      const payload: Record<string, any> = {
         nameAr: data.nameAr,
         nameFr: data.nameFr || data.nameAr,
+        nameEn: data.nameEn || data.nameFr || data.nameAr,
         image: data.image || '',
-        images: data.image ? [data.image] : []
-      });
+        images: data.image ? [data.image] : [],
+      };
+      if (data.countryCode) payload.countryCode = data.countryCode.toLowerCase();
+      const docRef = await addDoc(collection(db, 'services_destinations'), payload);
       await fetchDestinations();
       return docRef.id;
     } catch (error: any) {
@@ -116,14 +119,23 @@ function OTHotelsAdminContent({ params }: { params: { locale: string } }) {
         </div>
         
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full md:w-auto">
-          
+          <select
+            value={selectedDestId}
+            onChange={(e) => setSelectedDestId(e.target.value)}
+            className="border border-gray-200 rounded-xl p-3 bg-gray-50 text-gray-900 outline-none min-w-[200px] font-medium"
+          >
+            <option value="all">جميع الوجهات</option>
+            {destinations.map((d) => (
+              <option key={d.id} value={d.id}>{d.nameAr}</option>
+            ))}
+          </select>
           
           <button
             onClick={() => {
               setEditingHotel(null);
               setIsModalOpen(true);
             }}
-            className="flex items-center gap-2 bg-primary hover:bg-primary-dark text-white px-6 py-3 rounded-xl font-medium transition-colors whitespace-nowrap"
+            className="flex items-center justify-center gap-2 bg-primary hover:bg-primary-dark text-white px-6 py-3 rounded-xl font-medium transition-colors whitespace-nowrap"
           >
             <Plus className="w-5 h-5" />
             إضافة فندق/رحلة

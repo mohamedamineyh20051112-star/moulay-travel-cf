@@ -28,27 +28,35 @@ export default function MarketersAdmin({ params }: { params: { locale: string } 
     setLoading(false);
   };
 
-  const approveMarketer = async (id: string, currentCount: number) => {
+  const approveMarketer = async (id: string) => {
     const commission = prompt('أدخل تسعيرة العمولة لهذا المسوق (مثال: 1000 للحجز الواحد بالدينار):', '1000');
     if (commission === null) return; // User cancelled
+    const commissionRate = Math.max(0, Number(commission) || 1000);
     
     try {
-      // Generate a sequential code based on the number of approved marketers
-      // To make it simple, we use MT/ + random 4 digits, or a timestamp-based ID to ensure uniqueness,
-      // but the user requested MT/01, MT/02.
-      // Let's count approved marketers to get the next number:
-      const q = query(collection(db, 'users'), where('role', '==', 'marketer'), where('status', '==', 'approved'));
+      // Query all marketers across all statuses so deleting/rejecting never causes MT/XX collisions
+      const q = query(collection(db, 'users'), where('role', '==', 'marketer'));
       const snap = await getDocs(q);
-      const nextNumber = snap.size + 1;
+      let maxNum = 0;
+      snap.docs.forEach((d) => {
+        const code = String(d.data()?.promoCode || '');
+        const match = code.match(/^MT\/(\d+)$/);
+        if (match) {
+          const parsed = parseInt(match[1], 10);
+          if (parsed > maxNum) maxNum = parsed;
+        }
+      });
+      const nextNumber = maxNum + 1;
       const paddedNumber = nextNumber.toString().padStart(2, '0');
       const promoCode = `MT/${paddedNumber}`;
 
       await updateDoc(doc(db, 'users', id), {
         status: 'approved',
-        promoCode: promoCode
+        promoCode,
+        commissionRate,
       });
       
-      alert('تمت الموافقة بنجاح! كود الخصم المولد: ' + promoCode);
+      alert('تمت الموافقة بنجاح! كود الخصم المولد: ' + promoCode + ' (العمولة: ' + commissionRate + ' دج)');
       fetchMarketers();
     } catch (err) {
       console.error(err);
@@ -159,6 +167,9 @@ export default function MarketersAdmin({ params }: { params: { locale: string } 
                             <span className="inline-flex items-center gap-1 text-gold font-black tracking-wider bg-black/5 px-2 py-1 rounded w-fit text-sm">
                               <Tag className="w-3 h-3 text-gold" /> {marketer.promoCode}
                             </span>
+                            <span className="text-xs text-gray-500 font-medium">
+                              العمولة: {Number(marketer.commissionRate) > 0 ? marketer.commissionRate : 1000} د.ج / حجز
+                            </span>
                           </div>
                         )}
                       </td>
@@ -166,7 +177,7 @@ export default function MarketersAdmin({ params }: { params: { locale: string } 
                         <div className="flex items-center justify-center gap-2">
                           {marketer.status === 'pending' && (
                             <button 
-                              onClick={() => approveMarketer(marketer.id, marketers.length)}
+                              onClick={() => approveMarketer(marketer.id)}
                               className="p-2 bg-green-50 text-green-600 hover:bg-green-100 rounded-lg transition-colors"
                               title="قبول وتوليد كود"
                             >

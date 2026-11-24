@@ -255,6 +255,9 @@ export default function Header({ locale }: { locale: string }) {
             <div className="flex items-center bg-black/40 backdrop-blur-md p-1 rounded-full border border-white/20 shadow-[0_0_10px_rgba(0,0,0,0.2)]">
               <a
                 href={getLocaleSwitchHref("ar")}
+                onClick={() => {
+                  document.cookie = "NEXT_LOCALE=ar; path=/; max-age=31536000; SameSite=Lax";
+                }}
                 className={`px-2 md:px-3 py-1 md:py-1.5 rounded-full text-xs md:text-sm font-bold transition-all duration-300 ${
                   locale === "ar" ? "bg-gold text-white" : "text-white/70 hover:text-white"
                 }`}
@@ -263,6 +266,9 @@ export default function Header({ locale }: { locale: string }) {
               </a>
               <a
                 href={getLocaleSwitchHref("fr")}
+                onClick={() => {
+                  document.cookie = "NEXT_LOCALE=fr; path=/; max-age=31536000; SameSite=Lax";
+                }}
                 className={`px-2 md:px-3 py-1 md:py-1.5 rounded-full text-xs md:text-sm font-bold transition-all duration-300 ${
                   locale === "fr" ? "bg-gold text-white" : "text-white/70 hover:text-white"
                 }`}
@@ -271,6 +277,9 @@ export default function Header({ locale }: { locale: string }) {
               </a>
               <a
                 href={getLocaleSwitchHref("en")}
+                onClick={() => {
+                  document.cookie = "NEXT_LOCALE=en; path=/; max-age=31536000; SameSite=Lax";
+                }}
                 className={`px-2 md:px-3 py-1 md:py-1.5 rounded-full text-xs md:text-sm font-bold transition-all duration-300 ${
                   locale === "en" ? "bg-gold text-white" : "text-white/70 hover:text-white"
                 }`}

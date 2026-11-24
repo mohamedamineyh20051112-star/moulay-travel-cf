@@ -98,10 +98,17 @@ export default function HeroAdmin({ params }: { params: { locale: string } }) {
         { url: '/hero-desktop.jpg', type: 'desktop' },
         { url: '/hero-desktop-2.jpg', type: 'desktop' },
         { url: '/hero-desktop-3.jpg', type: 'desktop' },
+        { url: '/hero-desktop-4.jpg', type: 'desktop' },
+        { url: '/hero-desktop-5.jpg', type: 'desktop' },
+        { url: '/hero-desktop-6.jpg', type: 'desktop' },
         { url: '/hero-mobile.jpg', type: 'mobile' },
         { url: '/hero-mobile-2.jpg', type: 'mobile' },
         { url: '/hero-mobile-3.jpg', type: 'mobile' },
+        { url: '/hero-mobile-4.jpg', type: 'mobile' },
+        { url: '/hero-mobile-5.jpg', type: 'mobile' },
+        { url: '/hero-mobile-6.jpg', type: 'mobile' },
       ];
+      const existingBase64 = new Set(images.map((img) => img.imageBase64));
       for (const item of urls) {
         const res = await fetch(item.url);
         if (!res.ok) continue;
@@ -111,6 +118,8 @@ export default function HeroAdmin({ params }: { params: { locale: string } }) {
           r.onloadend = () => resolve(r.result as string);
           r.readAsDataURL(blob);
         });
+        if (existingBase64.has(base64)) continue;
+        existingBase64.add(base64);
         await addDoc(collection(db, 'heroImages'), {
           type: item.type,
           imageBase64: base64,

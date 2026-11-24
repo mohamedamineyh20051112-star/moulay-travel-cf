@@ -1,10 +1,11 @@
-import {getRequestConfig} from 'next-intl/server';
-import {notFound} from 'next/navigation';
+import { getRequestConfig } from 'next-intl/server';
 
 export const locales = ['ar', 'fr', 'en'];
 
-export default getRequestConfig(async ({locale}) => {
-  const validLocale: string = (locale && locales.includes(locale as any)) ? locale : 'ar';
+export default getRequestConfig(async ({ locale, requestLocale }) => {
+  const requested = locale ?? (await requestLocale);
+  const validLocale: string =
+    requested && locales.includes(requested as (typeof locales)[number]) ? requested : 'ar';
 
   let messages;
   if (validLocale === 'fr') {
@@ -17,6 +18,6 @@ export default getRequestConfig(async ({locale}) => {
 
   return {
     locale: validLocale,
-    messages
+    messages,
   };
 });

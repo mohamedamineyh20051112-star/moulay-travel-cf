@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { Loader2, ExternalLink } from "lucide-react";
 import { db } from "@/lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
+import { sanitizeExternalUrl } from "@/lib/normalize";
 import FlightBookingForm from "./FlightBookingForm";
 import OmraBookingForm from "./OmraBookingForm";
 import HotelBookingForm from "./HotelBookingForm";
@@ -71,17 +72,19 @@ export default function BookingForm({ initialService = "flights", locale }: { in
     );
   }
 
-  if (formUrl) {
+  const safeFormUrl = sanitizeExternalUrl(formUrl);
+
+  if (safeFormUrl) {
     return (
       <div className="bg-white rounded-2xl shadow-xl border border-gray-100 w-full overflow-hidden min-h-[700px] relative">
         <div className="absolute top-4 right-4 z-10">
-          <a href={formUrl} target="_blank" rel="noreferrer" className="flex items-center gap-2 bg-white/80 backdrop-blur px-4 py-2 rounded-xl text-sm font-bold text-gray-700 hover:text-primary hover:bg-white shadow-sm border transition-all">
+          <a href={safeFormUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 bg-white/80 backdrop-blur px-4 py-2 rounded-xl text-sm font-bold text-gray-700 hover:text-primary hover:bg-white shadow-sm border transition-all">
             <ExternalLink className="w-4 h-4"/> 
-            {locale === 'ar' ? 'فتح في نافذة جديدة' : 'Ouvrir'}
+            {locale === 'ar' ? 'فتح في نافذة جديدة' : locale === 'en' ? 'Open in new tab' : 'Ouvrir'}
           </a>
         </div>
         <iframe 
-          src={formUrl} 
+          src={safeFormUrl} 
           className="w-full min-h-[700px] border-none" 
           title="Booking Form"
         />

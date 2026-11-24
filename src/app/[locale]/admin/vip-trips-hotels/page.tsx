@@ -1,17 +1,17 @@
 'use client';
-import { normalizeDestination, normalizeDestinations } from '@/lib/normalize';
+import { normalizeDestination } from '@/lib/normalize';
 import { useState, useEffect, Suspense } from 'react';
 import { db } from '@/lib/firebase';
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, where } from 'firebase/firestore';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { ChevronRight, Plus, Pencil, Trash2, MapPin, Building2, Star } from 'lucide-react';
+import { ChevronRight, Plus, Pencil, Trash2, MapPin, Building2, Star, Crown } from 'lucide-react';
 import VIPHotelModal from '@/components/admin/VIPHotelModal';
 
-function OTHotelsAdminContent({ params }: { params: { locale: string } }) {
+function VIPHotelsAdminContent({ params }: { params: { locale: string } }) {
   const searchParams = useSearchParams();
   const destinationId = searchParams.get('destinationId');
-  
+
   const [hotels, setHotels] = useState<any[]>([]);
   const [destinations, setDestinations] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -30,25 +30,34 @@ function OTHotelsAdminContent({ params }: { params: { locale: string } }) {
   const fetchDestinations = async () => {
     try {
       const querySnapshot = await getDocs(collection(db, 'services_destinations'));
-      const destsData = querySnapshot.docs.map(d => normalizeDestination(d));
-      setDestinations(destsData);
+      setDestinations(querySnapshot.docs.map((d) => normalizeDestination(d)));
     } catch (error) {
       console.error(error);
     }
   };
 
-  const handleCreateDestination = async (destData: { nameAr: string, nameFr?: string, image?: string }) => {
+  const handleCreateDestination = async (destData: {
+    nameAr: string;
+    nameFr?: string;
+    nameEn?: string;
+    image?: string;
+    countryCode?: string;
+  }) => {
     try {
-      const docRef = await addDoc(collection(db, 'services_destinations'), {
+      const payload: Record<string, any> = {
         nameAr: destData.nameAr,
         nameFr: destData.nameFr || destData.nameAr,
+        nameEn: destData.nameEn || destData.nameFr || destData.nameAr,
         images: destData.image ? [destData.image] : [],
-        image: destData.image || ''
-      });
+        image: destData.image || '',
+      };
+      if (destData.countryCode) payload.countryCode = destData.countryCode.toLowerCase();
+
+      const docRef = await addDoc(collection(db, 'services_destinations'), payload);
       await fetchDestinations();
       return docRef.id;
     } catch (error: any) {
-      alert("حدث خطأ أثناء إنشاء الوجهة: " + error.message);
+      alert('حدث خطأ أثناء إنشاء الوجهة: ' + error.message);
       return null;
     }
   };
@@ -61,8 +70,7 @@ function OTHotelsAdminContent({ params }: { params: { locale: string } }) {
         q = query(q, where('destinationId', '==', selectedDestId)) as any;
       }
       const querySnapshot = await getDocs(q);
-      const hotelsData = querySnapshot.docs.map(doc => normalizeDestination(doc));
-      setHotels(hotelsData);
+      setHotels(querySnapshot.docs.map((d) => normalizeDestination(d)));
     } catch (error) {
       console.error(error);
     } finally {
@@ -72,7 +80,7 @@ function OTHotelsAdminContent({ params }: { params: { locale: string } }) {
 
   const handleSave = async (rawData: any) => {
     try {
-      const data = JSON.parse(JSON.stringify(rawData, (k, v) => v === undefined ? null : v));
+      const data = JSON.parse(JSON.stringify(rawData, (_k, v) => (v === undefined ? null : v)));
       if (editingHotel) {
         await updateDoc(doc(db, 'vip_trips_hotels', editingHotel.id), data);
       } else {
@@ -82,13 +90,13 @@ function OTHotelsAdminContent({ params }: { params: { locale: string } }) {
       setEditingHotel(null);
       fetchHotels();
     } catch (error: any) {
-      alert("حدث خطأ أثناء الحفظ: " + error.message);
+      alert('حدث خطأ أثناء الحفظ: ' + error.message);
       console.error(error);
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (window.confirm('هل أنت متأكد من حذف هذا الفندق/الرحلة؟')) {
+    if (window.confirm('هل أنت متأكد من حذف عرض VIP هذا؟')) {
       try {
         await deleteDoc(doc(db, 'vip_trips_hotels', id));
         fetchHotels();
@@ -99,42 +107,49 @@ function OTHotelsAdminContent({ params }: { params: { locale: string } }) {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6" dir={params.locale === 'ar' ? 'rtl' : 'ltr'}>
+    <div className="p-6 max-w-7xl mx-auto space-y-6 text-gray-900" dir="rtl">
       <div className="flex flex-wrap items-center gap-2 text-sm text-gray-500 mb-6">
         <Link href={`/${params.locale}/admin`} className="hover:text-primary transition-colors">
           لوحة التحكم
         </Link>
         <ChevronRight className="w-4 h-4 rtl:rotate-180" />
-        <span className="text-white font-medium">فنادق وبرامج الرحلات</span>
+        <span className="text-gray-900 font-bold">عروض وفنادق VIP</span>
       </div>
 
-      <div className="flex flex-col md:flex-row justify-between md:items-center gap-4 bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-700">
-        <div>
-          <h1 className="text-2xl font-bold text-white">فنادق وبرامج الرحلات</h1>
-          <p className="text-gray-400 mt-1">إدارة الفنادق والعروض للرحلات المنظمة</p>
+      <div className="flex flex-col md:flex-row justify-between md:items-center gap-4 bg-white p-6 rounded-2xl shadow-sm border border-amber-200/80">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center shrink-0">
+            <Crown className="w-6 h-6" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">عروض وفنادق VIP الحصرية</h1>
+            <p className="text-gray-500 mt-0.5">إدارة الفنادق والرحلات الفاخرة لقسم VIP</p>
+          </div>
         </div>
-        
+
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full md:w-auto">
-          <select 
+          <select
             value={selectedDestId}
             onChange={(e) => setSelectedDestId(e.target.value)}
-            className="border rounded-xl p-3 bg-gray-900 focus:bg-gray-800 outline-none min-w-[200px]"
+            className="border border-gray-200 rounded-xl p-3 bg-gray-50 text-gray-900 outline-none min-w-[200px] font-medium"
           >
             <option value="all">جميع الوجهات</option>
-            {destinations.map(d => (
-              <option key={d.id} value={d.id}>{d.nameAr}</option>
+            {destinations.map((d) => (
+              <option key={d.id} value={d.id}>
+                {d.nameAr}
+              </option>
             ))}
           </select>
-          
+
           <button
             onClick={() => {
               setEditingHotel(null);
               setIsModalOpen(true);
             }}
-            className="flex items-center gap-2 bg-primary hover:bg-primary-dark text-white px-6 py-3 rounded-xl font-medium transition-colors whitespace-nowrap"
+            className="flex items-center justify-center gap-2 bg-gray-900 hover:bg-amber-600 text-amber-300 hover:text-white px-6 py-3 rounded-xl font-bold transition-colors whitespace-nowrap"
           >
             <Plus className="w-5 h-5" />
-            إضافة فندق/رحلة
+            إضافة عرض VIP
           </button>
         </div>
       </div>
@@ -142,23 +157,23 @@ function OTHotelsAdminContent({ params }: { params: { locale: string } }) {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {isLoading ? (
           [1, 2, 3].map((n) => (
-            <div key={n} className="bg-gray-800 rounded-2xl shadow-sm border border-gray-700 overflow-hidden animate-pulse">
-              <div className="h-48 bg-gray-200"></div>
+            <div key={n} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden animate-pulse">
+              <div className="h-48 bg-gray-200" />
               <div className="p-5">
-                <div className="h-6 bg-gray-200 rounded w-1/2 mb-4"></div>
+                <div className="h-6 bg-gray-200 rounded w-1/2 mb-4" />
               </div>
             </div>
           ))
         ) : hotels.length === 0 ? (
-          <div className="col-span-full bg-gray-800 p-12 rounded-2xl shadow-sm border border-gray-700 text-center text-gray-400">
-            لا توجد فنادق أو برامج في هذه الوجهة.
+          <div className="col-span-full bg-white p-12 rounded-2xl shadow-sm border border-gray-100 text-center text-gray-500">
+            لا توجد عروض VIP في هذه الوجهة حالياً.
           </div>
         ) : (
           hotels.map((hotel) => {
-            const destName = destinations.find(d => d.id === hotel.destinationId)?.nameAr || 'غير محدد';
+            const destName = destinations.find((d) => d.id === hotel.destinationId)?.nameAr || 'غير محدد';
             return (
-              <div key={hotel.id} className="bg-gray-800 rounded-2xl shadow-sm border border-gray-700 overflow-hidden flex flex-col">
-                <div className="h-48 relative bg-gray-800">
+              <div key={hotel.id} className="bg-white rounded-2xl shadow-sm border border-amber-200/70 overflow-hidden flex flex-col">
+                <div className="h-48 relative bg-gray-100">
                   {hotel.images && hotel.images.length > 0 ? (
                     <img src={hotel.images[0]} alt={hotel.nameAr} className="w-full h-full object-cover" />
                   ) : (
@@ -166,20 +181,20 @@ function OTHotelsAdminContent({ params }: { params: { locale: string } }) {
                       <Building2 className="w-12 h-12 text-gray-300" />
                     </div>
                   )}
-                  <div className="absolute top-3 right-3 bg-gray-800/90 backdrop-blur px-2 py-1 rounded-lg text-xs font-bold text-gray-300 flex items-center gap-1">
-                    <Star className="w-3 h-3 text-gold fill-gold" />
+                  <div className="absolute top-3 right-3 bg-gray-900/90 backdrop-blur px-2.5 py-1 rounded-lg text-xs font-bold text-amber-300 flex items-center gap-1">
+                    <Star className="w-3 h-3 text-amber-300 fill-amber-300" />
                     {hotel.stars} نجوم
                   </div>
                 </div>
                 <div className="p-5 flex-1 flex flex-col">
-                  <h3 className="font-bold text-lg text-white mb-1">{hotel.nameAr}</h3>
-                  <div className="flex items-center gap-1 text-sm text-gray-400 mb-4">
+                  <h3 className="font-bold text-lg text-gray-900 mb-1">{hotel.nameAr}</h3>
+                  <div className="flex items-center gap-1 text-sm text-gray-500 mb-4">
                     <MapPin className="w-4 h-4" />
-                    <span>{destName}</span>
+                    <span>{destName}{hotel.zone ? ` • ${hotel.zone}` : ''}</span>
                   </div>
-                  <div className="mt-auto pt-4 border-t flex items-center justify-between">
+                  <div className="mt-auto pt-4 border-t border-gray-100 flex items-center justify-between">
                     <div>
-                      <p className="text-xs text-gray-400">يبدأ من</p>
+                      <p className="text-xs text-gray-500">يبدأ من</p>
                       <p className="font-bold text-primary">{hotel.price} د.ج</p>
                     </div>
                     <div className="flex gap-2">
@@ -188,7 +203,7 @@ function OTHotelsAdminContent({ params }: { params: { locale: string } }) {
                           setEditingHotel(hotel);
                           setIsModalOpen(true);
                         }}
-                        className="p-2 bg-gray-900 hover:bg-gray-800 text-gray-600 rounded-lg transition-colors"
+                        className="p-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors"
                       >
                         <Pencil className="w-4 h-4" />
                       </button>
@@ -222,10 +237,10 @@ function OTHotelsAdminContent({ params }: { params: { locale: string } }) {
   );
 }
 
-export default function OTHotelsAdmin({ params }: { params: { locale: string } }) {
+export default function VIPHotelsAdmin({ params }: { params: { locale: string } }) {
   return (
     <Suspense fallback={<div className="p-12 text-center">جاري التحميل...</div>}>
-      <OTHotelsAdminContent params={params} />
+      <VIPHotelsAdminContent params={params} />
     </Suspense>
   );
 }

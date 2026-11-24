@@ -5,11 +5,39 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   Star, MapPin, Calendar, Home, Tag, ChevronLeft, Heart, 
   Info, Coffee, Bus, Camera, CheckCircle, Phone, ArrowLeft, 
-  Send, FileText, CreditCard, HeartPulse, Car, Users, BedDouble, Utensils, User, Mail 
+  Send, FileText, CreditCard, HeartPulse, Car, Users, BedDouble, Utensils, User, Mail,
+  Sparkles, X
 } from "lucide-react";
 
 import { useCurrencyStore, formatConvertedPrice } from "@/store/useCurrencyStore";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSiteContact, buildWhatsAppUrl } from "@/lib/useSiteContact";
+import { useAutoTranslate } from "@/lib/translateClient";
+import { sanitizeExternalUrl } from "@/lib/normalize";
+import { resolveItemFeatures } from "@/data/serviceFeatures";
+import FeatureIcon from "@/components/FeatureIcon";
+
+function pickLocText(val: any, locale: string): string {
+  if (!val) return '';
+  if (typeof val === 'string') return val;
+  if (locale === 'en') return val.en || val.fr || val.ar || '';
+  if (locale === 'fr') return val.fr || val.ar || '';
+  return val.ar || val.fr || '';
+}
+
+function OmraLocalized({ value, locale }: { value: any; locale: string }) {
+  const arVal = typeof value === 'string' ? value : value?.ar || value?.fr || value?.en || '';
+  const explicit =
+    typeof value === 'string'
+      ? value
+      : locale === 'en'
+        ? value?.en || value?.fr
+        : locale === 'fr'
+          ? value?.fr
+          : value?.ar;
+  const text = useAutoTranslate(arVal, locale, explicit);
+  return <>{text}</>;
+}
 
 // --- Mock Data for Hotels ---
 const HOTELS: any[] = [];
@@ -164,9 +192,12 @@ export default function OmraBookingForm({ locale }: { locale: string }) {
   
   const { currency, dzdPerEur } = useCurrencyStore();
   const { userData } = useAuth();
+  const { whatsapp } = useSiteContact();
+  const [lightboxImg, setLightboxImg] = useState<string | null>(null);
+  const [likedIds, setLikedIds] = useState<Record<string, boolean>>({});
 
-  const getPrice = (dzd: string | number | undefined, eur?: string | number | undefined) => {
-    return formatConvertedPrice(dzd, currency, dzdPerEur, locale, eur);
+  const getPrice = (dzd: string | number | undefined) => {
+    return formatConvertedPrice(dzd, currency, dzdPerEur, locale, null);
   };
 
   const [view, setView] = useState<ViewState>('list');
@@ -179,15 +210,12 @@ export default function OmraBookingForm({ locale }: { locale: string }) {
         const querySnapshot = await getDocs(collection(db, 'omraHotels'));
         const fetched = querySnapshot.docs.map((doc): any => ({ id: doc.id, ...doc.data() }));
         if (fetched.length > 0) {
-          // Format Firestore hotel data to match the UI requirements (string prices for getPrice)
           const formatted = fetched.map(h => ({
             ...h,
             priceStartDzd: h.priceStartDzd?.toString(),
-            priceStartEur: h.priceStartEur?.toString(),
             roomPrices: Array.isArray(h.roomPrices) ? h.roomPrices.map((r: any) => ({
               ...r,
               priceDzd: r.priceDzd?.toString(),
-              priceEur: r.priceEur?.toString(),
             })) : []
           }));
           setDynamicHotels([...HOTELS, ...formatted]);
@@ -230,8 +258,8 @@ export default function OmraBookingForm({ locale }: { locale: string }) {
     
     const formData = new FormData(e.currentTarget);
     if (selectedHotel) {
-      formData.append('hotel', selectedHotel.name[locale as keyof typeof selectedHotel.name] || selectedHotel.name.fr);
-      formData.append('hotelCode', selectedHotel.code);
+      formData.append('hotel', pickLocText(selectedHotel.name, locale));
+      formData.append('hotelCode', selectedHotel.code || '');
     }
     
     try {
@@ -286,7 +314,7 @@ export default function OmraBookingForm({ locale }: { locale: string }) {
                   ))}
                 </div>
                 <h3 className="text-2xl sm:text-3xl font-black text-[#3a2818] mb-1 leading-tight">
-                  {hotel.name[locale as keyof typeof hotel.name]}
+                  <OmraLocalized value={hotel.name} locale={locale} />
                 </h3>
                 {hotel.code && (
                   <p className="text-sm font-semibold text-[#3a2818]/80">
@@ -295,13 +323,19 @@ export default function OmraBookingForm({ locale }: { locale: string }) {
                 )}
               </div>
 
-              {/* Image */}
-              <div className="relative h-48 sm:h-56 w-full rounded-2xl overflow-hidden mb-4 border border-[#e5d5b5]/30">
-                <img 
-                  src={hotel.image} 
-                  alt={hotel.name[locale as keyof typeof hotel.name] || 'Hotel'} 
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" 
-                />
+              {/* Square 1:1 Image */}
+              <div className="relative aspect-square w-full rounded-2xl overflow-hidden mb-4 border border-[#e5d5b5]/40 bg-[#f3ead8]">
+                {hotel.image ? (
+                  <img 
+                    src={hotel.image} 
+                    alt={pickLocText(hotel.name, locale) || 'Hotel'} 
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" 
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-[#c59a3f]/40">
+                    <Camera className="w-12 h-12" />
+                  </div>
+                )}
               </div>
 
               {/* Info Grid 1: Location & Distance */}
@@ -315,7 +349,7 @@ export default function OmraBookingForm({ locale }: { locale: string }) {
                       {isRtl ? 'المنطقة / الموقع:' : locale === 'en' ? 'Zone / Location:' : 'Zone / Emplacement :'}
                     </span>
                     <span className="text-xs sm:text-sm font-bold text-[#3a2818] truncate">
-                      {hotel.region?.[locale as keyof typeof hotel.region] || hotel.region?.ar || '-'}
+                      <OmraLocalized value={hotel.region} locale={locale} />
                     </span>
                   </div>
                 </div>
@@ -335,10 +369,10 @@ export default function OmraBookingForm({ locale }: { locale: string }) {
               </div>
 
               {/* Google Maps Link */}
-              {hotel.googleMapsLink && (
+              {sanitizeExternalUrl(hotel.googleMapsLink) && (
                 <div className="mb-2">
                   <a 
-                    href={hotel.googleMapsLink} 
+                    href={sanitizeExternalUrl(hotel.googleMapsLink)!} 
                     target="_blank" 
                     rel="noopener noreferrer" 
                     onClick={(e) => e.stopPropagation()}
@@ -352,7 +386,7 @@ export default function OmraBookingForm({ locale }: { locale: string }) {
                         Google Maps ↗
                       </span>
                       <span className="text-[10px] sm:text-xs text-blue-500 truncate w-full">
-                        {hotel.googleMapsLink}
+                        {sanitizeExternalUrl(hotel.googleMapsLink)}
                       </span>
                     </div>
                   </a>
@@ -368,7 +402,7 @@ export default function OmraBookingForm({ locale }: { locale: string }) {
                   </div>
                   <div className="flex flex-col flex-1 min-w-0">
                     <span className="text-[10px] text-gray-500 font-medium whitespace-nowrap">
-                      {isRtl ? 'النقل متوفر:' : locale === 'en' ? 'Transport available:' : 'Transport disponible :'}
+                      {isRtl ? 'النقل متوفر:' : locale === 'en' ? 'Transport:' : 'Transport disponible :'}
                     </span>
                     <span className="text-xs sm:text-sm font-bold text-[#3a2818] truncate">
                       {(() => {
@@ -384,13 +418,17 @@ export default function OmraBookingForm({ locale }: { locale: string }) {
                   </div>
                 </div>
 
-                {/* Shuttle Details if available, else empty or features */}
+                {/* Shuttle Details */}
                 <div className="bg-white rounded-[2rem] p-2 flex flex-col justify-center border border-[#e5d5b5] min-h-[52px]">
                   {hotel.shuttleAvailable ? (
                     <div className="flex items-center gap-2">
                       <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
                       <span className="text-[10px] sm:text-xs font-semibold text-[#3a2818] line-clamp-2 leading-tight">
-                        {hotel.shuttleSchedule?.[locale as keyof typeof hotel.shuttleSchedule] || (isRtl ? 'نقل ترددي للفندق' : locale === 'en' ? 'Hotel Shuttle' : 'Navette hôtel')}
+                        {pickLocText(hotel.shuttleSchedule, locale) ? (
+                          <OmraLocalized value={hotel.shuttleSchedule} locale={locale} />
+                        ) : (
+                          isRtl ? 'نقل ترددي للفندق' : locale === 'en' ? 'Hotel Shuttle' : 'Navette hôtel'
+                        )}
                       </span>
                     </div>
                   ) : (
@@ -405,14 +443,14 @@ export default function OmraBookingForm({ locale }: { locale: string }) {
               </div>
 
               {/* Info Grid 3: Days & Madinah Hotel */}
-              <div className="grid grid-cols-2 gap-2 mb-4">
+              <div className="grid grid-cols-2 gap-2 mb-3">
                 <div className="bg-white rounded-[2rem] p-1.5 pr-3 flex items-center gap-2 border border-[#e5d5b5]">
                   <div className="w-10 h-10 rounded-full bg-[#c59a3f] flex items-center justify-center shrink-0">
                     <Calendar className="w-5 h-5 text-white" />
                   </div>
                   <div className="flex flex-col flex-1 min-w-0">
                     <span className="text-[10px] text-gray-500 font-medium whitespace-nowrap">
-                      {isRtl ? 'مكة / المدينة:' : 'Mekka / Madina :'}
+                      {isRtl ? 'مكة / المدينة:' : locale === 'en' ? 'Makkah / Madinah:' : 'Mekka / Madina :'}
                     </span>
                     <span className="text-xs sm:text-sm font-bold text-[#3a2818] truncate">
                       {hotel.daysMakkah}/{hotel.daysMadinah}
@@ -426,14 +464,37 @@ export default function OmraBookingForm({ locale }: { locale: string }) {
                   </div>
                   <div className="flex flex-col flex-1 min-w-0">
                     <span className="text-[10px] text-gray-500 font-medium whitespace-nowrap">
-                      {isRtl ? 'فندق المدينة:' : 'Hôtel Madina :'}
+                      {isRtl ? 'فندق المدينة:' : locale === 'en' ? 'Madinah Hotel:' : 'Hôtel Madina :'}
                     </span>
                     <span className="text-[10px] sm:text-xs font-bold text-[#3a2818] line-clamp-2 leading-tight">
-                      {hotel.madinahHotel?.[locale as keyof typeof hotel.madinahHotel] || hotel.madinahHotel?.ar || (isRtl ? 'غير محدد' : 'N/A')}
+                      {pickLocText(hotel.madinahHotel, locale) ? (
+                        <OmraLocalized value={hotel.madinahHotel} locale={locale} />
+                      ) : (
+                        isRtl ? 'غير محدد' : 'N/A'
+                      )}
                     </span>
                   </div>
                 </div>
               </div>
+
+              {/* Toggleable Omra Service Chips */}
+              {(() => {
+                const feats = resolveItemFeatures('omra', hotel, locale).slice(0, 3);
+                if (feats.length === 0) return null;
+                return (
+                  <div className="flex flex-wrap gap-1.5 mb-3">
+                    {feats.map((feat) => (
+                      <span
+                        key={feat.id}
+                        className="inline-flex items-center gap-1 bg-white border border-[#e5d5b5] text-[#5e4418] px-2.5 py-1 rounded-full text-[11px] font-bold"
+                      >
+                        <FeatureIcon name={feat.icon} className="w-3 h-3 text-[#c59a3f]" />
+                        <span>{feat.label}</span>
+                      </span>
+                    ))}
+                  </div>
+                );
+              })()}
 
               {/* Price Footer */}
               <div className="mt-auto bg-[#b38b36] rounded-[2rem] p-1.5 flex items-center justify-between text-white shadow-md hover:bg-[#a37d2f] transition-colors group-hover:scale-[1.02] transform origin-center duration-300">
@@ -445,7 +506,7 @@ export default function OmraBookingForm({ locale }: { locale: string }) {
                     {isRtl ? 'ابتداءً من :' : locale === 'en' ? 'Starting from :' : 'À partir de :'}
                   </span>
                   <span className="text-xl sm:text-2xl font-bold" dir="ltr">
-                    {getPrice(hotel.priceStartDzd, hotel.priceStartEur)}
+                    {getPrice(hotel.priceStartDzd)}
                   </span>
                 </div>
                 <div className="w-10 h-10 flex items-center justify-center shrink-0 mr-1">
@@ -462,11 +523,17 @@ export default function OmraBookingForm({ locale }: { locale: string }) {
 
   // ---------------- VIEW: DETAILS ----------------
   if (view === 'details' && selectedHotel) {
+    const selectedName = pickLocText(selectedHotel.name, locale);
     const waText = isRtl 
-      ? `السلام عليكم، أود الاستفسار عن ${selectedHotel.name.ar} (رمز: ${selectedHotel.code})...` 
-      : `Bonjour, je voudrais me renseigner concernant ${selectedHotel.name.fr} (Code: ${selectedHotel.code})...`;
+      ? `السلام عليكم، أود الاستفسار عن ${selectedHotel.name?.ar || selectedName} (رمز: ${selectedHotel.code})...` 
+      : locale === 'en'
+        ? `Hello, I would like information about ${selectedName} (Code: ${selectedHotel.code})...`
+        : `Bonjour, je voudrais me renseigner concernant ${selectedHotel.name?.fr || selectedName} (Code: ${selectedHotel.code})...`;
+    const omraFeatures = resolveItemFeatures('omra', selectedHotel, locale);
+    const isLiked = !!likedIds[selectedHotel.id];
 
     return (
+      <>
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -475,29 +542,50 @@ export default function OmraBookingForm({ locale }: { locale: string }) {
         className="max-w-4xl mx-auto my-8 bg-[#fdf8f0] rounded-[2rem] border border-gold/30 shadow-2xl overflow-hidden pb-24 relative"
       >
         {/* Header */}
-        <div className="p-6 flex items-center justify-between border-b border-gold/20 relative">
-          <button onClick={() => setView('list')} className="p-3 bg-white rounded-full shadow-md hover:bg-gray-50 transition">
+        <div className="p-5 sm:p-6 flex items-center justify-between gap-3 border-b border-gold/20 relative">
+          <button onClick={() => setView('list')} className="p-3 bg-white rounded-full shadow-md hover:bg-gray-50 transition shrink-0">
             <ChevronLeft className={`w-6 h-6 text-primary ${isRtl ? 'rotate-180' : ''}`} />
           </button>
-          <div className="text-center absolute left-1/2 -translate-x-1/2">
-            <h2 className="text-2xl md:text-3xl font-bold text-primary">{selectedHotel.name[locale as keyof typeof selectedHotel.name]}</h2>
-            <p className="text-gold font-medium flex items-center justify-center gap-2 mt-1">
+          <div className="text-center min-w-0 flex-1">
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-primary truncate">
+              <OmraLocalized value={selectedHotel.name} locale={locale} />
+            </h2>
+            <p className="text-gold font-medium flex items-center justify-center gap-2 mt-1 text-sm">
               <span className="w-1.5 h-1.5 rounded-full bg-gold"></span>
-              {isRtl ? 'تفاصيل العرض' : locale === 'en' ? 'Offer Details' : 'Détails de l\'offre'}
+              {isRtl ? 'تفاصيل العرض' : locale === 'en' ? 'Offer Details' : "Détails de l'offre"}
               <span className="w-1.5 h-1.5 rounded-full bg-gold"></span>
             </p>
           </div>
-          <button className="p-3 bg-white rounded-full shadow-md hover:bg-gray-50 transition text-gray-400 hover:text-red-500">
-            <Heart className="w-6 h-6" />
+          <button
+            type="button"
+            onClick={() => setLikedIds((p) => ({ ...p, [selectedHotel.id]: !p[selectedHotel.id] }))}
+            className={`p-3 bg-white rounded-full shadow-md hover:bg-gray-50 transition shrink-0 ${isLiked ? 'text-red-500' : 'text-gray-400 hover:text-red-500'}`}
+          >
+            <Heart className={`w-6 h-6 ${isLiked ? 'fill-current' : ''}`} />
           </button>
         </div>
 
-        {/* Hero Image & Banner */}
+        {/* Square Hero Image & Banner */}
         <div className="px-6 pt-6">
-          <div className="rounded-3xl overflow-hidden h-[300px] md:h-[400px] shadow-lg relative">
-            <img src={selectedHotel.image} alt={selectedHotel.name.fr} className="w-full h-full object-cover" />
+          <div
+            onClick={() => selectedHotel.image && setLightboxImg(selectedHotel.image)}
+            className="max-w-md mx-auto w-full aspect-square rounded-3xl overflow-hidden shadow-lg relative border-2 border-gold/25 bg-[#f3ead8] cursor-pointer group"
+          >
+            {selectedHotel.image ? (
+              <>
+                <img src={selectedHotel.image} alt={selectedName} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                <span className="absolute bottom-3 right-3 bg-black/55 backdrop-blur-md text-white px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1.5">
+                  <Camera className="w-3.5 h-3.5 text-gold" />
+                  {isRtl ? 'انقر للتكبير' : locale === 'en' ? 'Tap to zoom' : 'Agrandir'}
+                </span>
+              </>
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-[#c59a3f]/40">
+                <Camera className="w-14 h-14" />
+              </div>
+            )}
           </div>
-          <div className="bg-white rounded-2xl p-4 mt-4 shadow-sm border border-gold/10 flex flex-wrap justify-center gap-6 md:gap-12 text-gray-700 font-semibold">
+          <div className="bg-white rounded-2xl p-4 mt-5 shadow-sm border border-gold/10 flex flex-wrap justify-center gap-6 md:gap-12 text-gray-700 font-semibold">
             <div className="flex items-center gap-2">
               <MapPin className="w-5 h-5 text-gold" />
               {isRtl ? 'يبعد عن الحرم المكي :' : locale === 'en' ? 'Distance from Haram:' : 'Distance du Haram :'} {selectedHotel.distanceMakkah}
@@ -505,7 +593,7 @@ export default function OmraBookingForm({ locale }: { locale: string }) {
             <div className="w-px h-6 bg-gray-300 hidden md:block"></div>
             <div className="flex items-center gap-2">
               <MapPin className="w-5 h-5 text-gold" />
-              {isRtl ? 'المنطقة :' : locale === 'en' ? 'Region:' : 'Région :'} {selectedHotel.region[locale as keyof typeof selectedHotel.region]}
+              {isRtl ? 'المنطقة :' : locale === 'en' ? 'Region:' : 'Région :'} <OmraLocalized value={selectedHotel.region} locale={locale} />
             </div>
           </div>
         </div>
@@ -513,33 +601,48 @@ export default function OmraBookingForm({ locale }: { locale: string }) {
         {/* Content Sections */}
         <div className="p-6 md:p-8 space-y-8">
           
-          {/* Quick Tabs (Images) */}
-          <div className="grid grid-cols-3 gap-4">
-            <div className="flex flex-col items-center gap-3">
-              <h4 className="text-gold font-bold text-center flex items-center gap-1"><Camera className="w-4 h-4"/> {isRtl ? 'صور الغرف' : 'Chambres'}</h4>
-              <div className="w-full h-24 md:h-32 rounded-xl bg-gray-100 shadow-inner overflow-hidden border border-gold/10">
+          {/* Square Sub-Gallery Cards */}
+          <div className="grid grid-cols-3 gap-3 sm:gap-5">
+            <div className="flex flex-col items-center gap-2.5">
+              <h4 className="text-gold font-bold text-center text-xs sm:text-sm flex items-center gap-1">
+                <Camera className="w-4 h-4"/> {isRtl ? 'صور الغرف' : locale === 'en' ? 'Rooms' : 'Chambres'}
+              </h4>
+              <div
+                onClick={() => selectedHotel.images?.rooms && setLightboxImg(selectedHotel.images.rooms)}
+                className="w-full aspect-square rounded-2xl bg-gray-100 shadow-inner overflow-hidden border border-gold/20 cursor-pointer group"
+              >
                  {selectedHotel.images?.rooms ? (
-                    <img src={selectedHotel.images.rooms} className="w-full h-full object-cover" />
+                    <img src={selectedHotel.images.rooms} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                  ) : (
                     <div className="w-full h-full flex items-center justify-center text-gray-400"><Camera className="w-6 h-6 opacity-30" /></div>
                  )}
               </div>
             </div>
-            <div className="flex flex-col items-center gap-3">
-              <h4 className="text-gold font-bold text-center flex items-center gap-1"><Utensils className="w-4 h-4"/> {isRtl ? 'المطعم' : 'Restaurant'}</h4>
-              <div className="w-full h-24 md:h-32 rounded-xl bg-gray-100 shadow-inner overflow-hidden border border-gold/10">
+            <div className="flex flex-col items-center gap-2.5">
+              <h4 className="text-gold font-bold text-center text-xs sm:text-sm flex items-center gap-1">
+                <Utensils className="w-4 h-4"/> {isRtl ? 'المطعم' : 'Restaurant'}
+              </h4>
+              <div
+                onClick={() => selectedHotel.images?.restaurant && setLightboxImg(selectedHotel.images.restaurant)}
+                className="w-full aspect-square rounded-2xl bg-gray-100 shadow-inner overflow-hidden border border-gold/20 cursor-pointer group"
+              >
                  {selectedHotel.images?.restaurant ? (
-                    <img src={selectedHotel.images.restaurant} className="w-full h-full object-cover" />
+                    <img src={selectedHotel.images.restaurant} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                  ) : (
                     <div className="w-full h-full flex items-center justify-center text-gray-400"><Utensils className="w-6 h-6 opacity-30" /></div>
                  )}
               </div>
             </div>
-            <div className="flex flex-col items-center gap-3">
-              <h4 className="text-gold font-bold text-center flex items-center gap-1"><Info className="w-4 h-4"/> {isRtl ? 'الخدمات' : 'Services'}</h4>
-              <div className="w-full h-24 md:h-32 rounded-xl bg-gray-100 shadow-inner overflow-hidden border border-gold/10">
+            <div className="flex flex-col items-center gap-2.5">
+              <h4 className="text-gold font-bold text-center text-xs sm:text-sm flex items-center gap-1">
+                <Info className="w-4 h-4"/> {isRtl ? 'الخدمات' : 'Services'}
+              </h4>
+              <div
+                onClick={() => selectedHotel.images?.services && setLightboxImg(selectedHotel.images.services)}
+                className="w-full aspect-square rounded-2xl bg-gray-100 shadow-inner overflow-hidden border border-gold/20 cursor-pointer group"
+              >
                  {selectedHotel.images?.services ? (
-                    <img src={selectedHotel.images.services} className="w-full h-full object-cover" />
+                    <img src={selectedHotel.images.services} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                  ) : (
                     <div className="w-full h-full flex items-center justify-center text-gray-400"><Info className="w-6 h-6 opacity-30" /></div>
                  )}
@@ -547,7 +650,27 @@ export default function OmraBookingForm({ locale }: { locale: string }) {
             </div>
           </div>
 
-          {/* Pricing Table */}
+          {/* Toggleable Omra Services Strip */}
+          {omraFeatures.length > 0 && (
+            <div className="bg-white p-5 rounded-2xl border border-gold/20 shadow-sm">
+              <h4 className="text-primary font-bold mb-4 flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-gold" />
+                {isRtl ? 'الخدمات والمزايا المشمولة' : locale === 'en' ? 'Included Amenities & Services' : 'Services & Prestations Inclus'}
+              </h4>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {omraFeatures.map((feat) => (
+                  <div key={feat.id} className="flex items-center gap-2.5 p-2.5 rounded-xl bg-[#fdfaf4] border border-gold/15 text-gray-800 text-xs sm:text-sm font-bold">
+                    <div className="w-7 h-7 rounded-lg bg-gold/15 text-gold flex items-center justify-center shrink-0">
+                      <FeatureIcon name={feat.icon} className="w-4 h-4" />
+                    </div>
+                    <span>{feat.label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Pricing Table (Auto-calculated EUR from DZD) */}
           <div>
             <h3 className="text-xl font-bold text-primary mb-4 text-center flex items-center justify-center gap-2">
               <span className="w-8 h-[1px] bg-gold"></span>
@@ -558,15 +681,19 @@ export default function OmraBookingForm({ locale }: { locale: string }) {
               <table className="w-full text-center">
                 <thead className="bg-gold/10 text-primary">
                   <tr>
-                    <th className="py-4 px-6 border-b border-gold/20 font-bold w-1/2">{isRtl ? 'نوع الغرفة' : 'Type de Chambre'}</th>
-                    <th className="py-4 px-6 border-b border-gold/20 font-bold border-l border-gold/20">{isRtl ? 'السعر للشخص' : 'Prix par Personne'}</th>
+                    <th className="py-4 px-6 border-b border-gold/20 font-bold w-1/2">
+                      {isRtl ? 'نوع الغرفة' : locale === 'en' ? 'Room Type' : 'Type de Chambre'}
+                    </th>
+                    <th className="py-4 px-6 border-b border-gold/20 font-bold border-s border-gold/20">
+                      {isRtl ? 'السعر للشخص' : locale === 'en' ? 'Price / Person' : 'Prix par Personne'}
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="text-gray-700 font-medium">
-                  {selectedHotel.roomPrices.map((room: any, idx: number) => (
+                  {(selectedHotel.roomPrices || []).map((room: any, idx: number) => (
                     <tr key={idx} className="border-b border-gray-100 last:border-0 hover:bg-gray-50 transition">
-                      <td className="py-4 px-6">{room.type[locale as keyof typeof room.type]}</td>
-                      <td className="py-4 px-6 border-l border-gold/20 bg-[#fdfdfd]" dir="ltr">{getPrice(room.priceDzd, room.priceEur)}</td>
+                      <td className="py-4 px-6"><OmraLocalized value={room.type} locale={locale} /></td>
+                      <td className="py-4 px-6 border-s border-gold/20 bg-[#fdfdfd]" dir="ltr">{getPrice(room.priceDzd)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -617,12 +744,12 @@ export default function OmraBookingForm({ locale }: { locale: string }) {
                 <div className="flex items-start gap-4">
                   <div className="bg-gold/10 p-2 rounded-full text-gold"><Coffee className="w-5 h-5"/></div>
                   <div>
-                    <p className="font-bold text-gray-800">{selectedHotel.food.type[locale as keyof typeof selectedHotel.food.type]}</p>
-                    <p className="text-sm text-gray-500 mt-1">{selectedHotel.food.price} {selectedHotel.food.price !== 'Inclus' && (isRtl ? 'دج/يوم' : 'DA/jour')}</p>
+                    <p className="font-bold text-gray-800"><OmraLocalized value={selectedHotel.food.type} locale={locale} /></p>
+                    <p className="text-sm text-gray-500 mt-1">{selectedHotel.food.price} {selectedHotel.food.price !== 'Inclus' && !String(selectedHotel.food.price).includes('مشمول') && (isRtl ? 'دج/يوم' : 'DA/jour')}</p>
                   </div>
                 </div>
               ) : (
-                <p className="text-gray-500">{isRtl ? 'غير متوفر' : 'Non disponible'}</p>
+                <p className="text-gray-500">{isRtl ? 'غير متوفر' : locale === 'en' ? 'Not available' : 'Non disponible'}</p>
               )}
             </div>
           </div>
@@ -631,28 +758,28 @@ export default function OmraBookingForm({ locale }: { locale: string }) {
             {/* Ziyarat */}
             <div className="bg-white p-6 rounded-2xl border border-gold/20 shadow-sm">
               <h4 className="text-primary font-bold mb-4 flex items-center gap-2">
-                <MapPin className="w-5 h-5 text-gold" /> {isRtl ? 'المزارات' : 'Visites (Ziyarat)'}
+                <MapPin className="w-5 h-5 text-gold" /> {isRtl ? 'المزارات' : locale === 'en' ? 'Visits (Ziyarat)' : 'Visites (Ziyarat)'}
               </h4>
               <ul className="space-y-3">
                 {(Array.isArray(selectedHotel.ziyarat) && selectedHotel.ziyarat.length > 0) ? selectedHotel.ziyarat.map((z: any, idx: number) => (
                   <li key={idx} className="flex items-center gap-3 text-gray-700 font-medium">
-                    <span className="w-2 h-2 rounded-full bg-gold"></span> {z[locale as keyof typeof z]}
+                    <span className="w-2 h-2 rounded-full bg-gold"></span> <OmraLocalized value={z} locale={locale} />
                   </li>
-                )) : <p className="text-gray-500">{isRtl ? 'غير محدد' : 'Non spécifié'}</p>}
+                )) : <p className="text-gray-500">{isRtl ? 'غير محدد' : locale === 'en' ? 'Not specified' : 'Non spécifié'}</p>}
               </ul>
             </div>
 
             {/* Program */}
             <div className="bg-white p-6 rounded-2xl border border-gold/20 shadow-sm">
               <h4 className="text-primary font-bold mb-4 flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-gold" /> {isRtl ? 'برنامج الرحلة' : 'Programme du Voyage'}
+                <Calendar className="w-5 h-5 text-gold" /> {isRtl ? 'برنامج الرحلة' : locale === 'en' ? 'Trip Program' : 'Programme du Voyage'}
               </h4>
               <ul className="space-y-3">
                 {(Array.isArray(selectedHotel.program) && selectedHotel.program.length > 0) ? selectedHotel.program.map((p: any, idx: number) => (
                   <li key={idx} className="flex items-center gap-3 text-gray-700 font-medium">
-                    <span className="w-2 h-2 rounded-full bg-gold"></span> {p[locale as keyof typeof p]}
+                    <span className="w-2 h-2 rounded-full bg-gold"></span> <OmraLocalized value={p} locale={locale} />
                   </li>
-                )) : <p className="text-gray-500">{isRtl ? 'غير محدد' : 'Non spécifié'}</p>}
+                )) : <p className="text-gray-500">{isRtl ? 'غير محدد' : locale === 'en' ? 'Not specified' : 'Non spécifié'}</p>}
               </ul>
             </div>
           </div>
@@ -669,34 +796,34 @@ export default function OmraBookingForm({ locale }: { locale: string }) {
                 <table className="w-full text-center min-w-[800px]">
                   <thead className="bg-gold/10 text-primary whitespace-nowrap">
                     <tr>
-                      <th className="py-3 px-4 border-b border-gold/20 font-bold">{isRtl ? 'الإقلاع' : 'Départ'}</th>
-                      <th className="py-3 px-4 border-b border-gold/20 font-bold">{isRtl ? 'تاريخ الذهاب' : 'Date Aller'}</th>
-                      <th className="py-3 px-4 border-b border-gold/20 font-bold">{isRtl ? 'نوع الرحلة' : 'Type Vol'}</th>
-                      <th className="py-3 px-4 border-b border-gold/20 font-bold">{isRtl ? 'مدة الرحلة' : 'Durée'}</th>
-                      <th className="py-3 px-4 border-b border-gold/20 font-bold">{isRtl ? 'الدخول' : 'Entrée'}</th>
-                      <th className="py-3 px-4 border-b border-gold/20 font-bold">{isRtl ? 'نوع الخطوط' : 'Compagnie'}</th>
-                      <th className="py-3 px-4 border-b border-gold/20 font-bold">{isRtl ? 'الخروج' : 'Sortie'}</th>
-                      <th className="py-3 px-4 border-b border-gold/20 font-bold">{isRtl ? 'تاريخ الرجوع' : 'Date Retour'}</th>
+                      <th className="py-3 px-4 border-b border-gold/20 font-bold">{isRtl ? 'الإقلاع' : locale === 'en' ? 'Departure' : 'Départ'}</th>
+                      <th className="py-3 px-4 border-b border-gold/20 font-bold">{isRtl ? 'تاريخ الذهاب' : locale === 'en' ? 'Outbound' : 'Date Aller'}</th>
+                      <th className="py-3 px-4 border-b border-gold/20 font-bold">{isRtl ? 'نوع الرحلة' : locale === 'en' ? 'Flight Type' : 'Type Vol'}</th>
+                      <th className="py-3 px-4 border-b border-gold/20 font-bold">{isRtl ? 'مدة الرحلة' : locale === 'en' ? 'Duration' : 'Durée'}</th>
+                      <th className="py-3 px-4 border-b border-gold/20 font-bold">{isRtl ? 'الدخول' : locale === 'en' ? 'Entry' : 'Entrée'}</th>
+                      <th className="py-3 px-4 border-b border-gold/20 font-bold">{isRtl ? 'نوع الخطوط' : locale === 'en' ? 'Airline' : 'Compagnie'}</th>
+                      <th className="py-3 px-4 border-b border-gold/20 font-bold">{isRtl ? 'الخروج' : locale === 'en' ? 'Exit' : 'Sortie'}</th>
+                      <th className="py-3 px-4 border-b border-gold/20 font-bold">{isRtl ? 'تاريخ الرجوع' : locale === 'en' ? 'Return' : 'Date Retour'}</th>
                     </tr>
                   </thead>
                   <tbody className="text-gray-700 font-medium whitespace-nowrap">
-                    {/* @ts-ignore */}
                     {(Array.isArray(selectedHotel.schedule) ? selectedHotel.schedule : []).map((sch: any, idx: number) => (
                       <tr key={idx} className="border-b border-gray-100 last:border-0 hover:bg-gray-50 transition">
-                        <td className="py-4 px-4">{sch.departLoc[locale as keyof typeof sch.departLoc]}</td>
+                        <td className="py-4 px-4"><OmraLocalized value={sch.departLoc} locale={locale} /></td>
                         <td className="py-4 px-4" dir="ltr">{sch.departDate}</td>
-                        <td className="py-4 px-4">{sch.flightType[locale as keyof typeof sch.flightType]}</td>
-                        <td className="py-4 px-4">{sch.duration[locale as keyof typeof sch.duration]}</td>
-                        <td className="py-4 px-4">{sch.entry[locale as keyof typeof sch.entry]}</td>
-                        <td className="py-4 px-4">{sch.airline[locale as keyof typeof sch.airline]}</td>
-                        <td className="py-4 px-4">{sch.exit[locale as keyof typeof sch.exit]}</td>
+                        <td className="py-4 px-4"><OmraLocalized value={sch.flightType} locale={locale} /></td>
+                        <td className="py-4 px-4"><OmraLocalized value={sch.duration} locale={locale} /></td>
+                        <td className="py-4 px-4"><OmraLocalized value={sch.entry} locale={locale} /></td>
+                        <td className="py-4 px-4"><OmraLocalized value={sch.airline} locale={locale} /></td>
+                        <td className="py-4 px-4"><OmraLocalized value={sch.exit} locale={locale} /></td>
                         <td className="py-4 px-4" dir="ltr">{sch.returnDate}</td>
                       </tr>
                     ))}
-                    {/* @ts-ignore */}
                     {(!selectedHotel.schedule || selectedHotel.schedule.length === 0) && (
                       <tr>
-                        <td colSpan={8} className="py-6 text-gray-500">{isRtl ? 'لا توجد رحلات مجدولة حالياً' : 'Aucun vol programmé actuellement'}</td>
+                        <td colSpan={8} className="py-6 text-gray-500">
+                          {isRtl ? 'لا توجد رحلات مجدولة حالياً' : locale === 'en' ? 'No scheduled flights yet' : 'Aucun vol programmé actuellement'}
+                        </td>
                       </tr>
                     )}
                   </tbody>
@@ -710,24 +837,51 @@ export default function OmraBookingForm({ locale }: { locale: string }) {
         <div className="fixed md:absolute bottom-0 left-0 w-full bg-white border-t border-gold/30 p-4 shadow-[0_-10px_20px_rgba(0,0,0,0.05)] z-50 rounded-b-[2rem]">
           <div className="max-w-4xl mx-auto flex gap-4">
             <a 
-              href={`https://wa.me/213555536525?text=${encodeURIComponent(waText)}`}
+              href={buildWhatsAppUrl(whatsapp, waText)}
               target="_blank" 
               rel="noopener noreferrer"
               className="flex-1 bg-[#25D366] hover:bg-[#1da851] text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition shadow-lg text-sm md:text-lg"
             >
               <Phone className="w-5 h-5" />
-              {isRtl ? 'استفسار عبر WhatsApp' : 'Contact via WhatsApp'}
+              {isRtl ? 'استفسار عبر WhatsApp' : locale === 'en' ? 'Contact WhatsApp' : 'Contact via WhatsApp'}
             </a>
             <button 
               onClick={handleBookClick}
               className="flex-1 bg-gold hover:bg-yellow-600 text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition shadow-lg text-sm md:text-lg"
             >
               <Calendar className="w-5 h-5" />
-              {isRtl ? 'احجز الآن' : 'Réserver Maintenant'}
+              {isRtl ? 'احجز الآن' : locale === 'en' ? 'Book Now' : 'Réserver Maintenant'}
             </button>
           </div>
         </div>
       </motion.div>
+
+      <AnimatePresence>
+        {lightboxImg && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setLightboxImg(null)}
+            className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4"
+          >
+            <button
+              type="button"
+              onClick={() => setLightboxImg(null)}
+              className="absolute top-6 right-6 p-3 bg-white/10 hover:bg-white/20 text-white rounded-full"
+            >
+              <X className="w-6 h-6" />
+            </button>
+            <img
+              src={lightboxImg}
+              alt={selectedName}
+              onClick={(e) => e.stopPropagation()}
+              className="max-w-full max-h-[85vh] rounded-2xl object-contain shadow-2xl"
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+      </>
     );
   }
 
@@ -737,15 +891,17 @@ export default function OmraBookingForm({ locale }: { locale: string }) {
       <div ref={topRef} dir={isRtl ? 'rtl' : 'ltr'} className="bg-white p-6 md:p-12 rounded-2xl shadow-xl border border-gray-100 max-w-3xl mx-auto my-8 relative">
         <button onClick={() => setView('details')} className="mb-6 flex items-center gap-2 text-gray-500 hover:text-primary transition font-bold">
           <ArrowLeft className={`w-5 h-5 ${isRtl ? 'rotate-180' : ''}`} />
-          {isRtl ? 'العودة لتفاصيل الفندق' : 'Retour aux détails'}
+          {isRtl ? 'العودة لتفاصيل الفندق' : locale === 'en' ? 'Back to details' : 'Retour aux détails'}
         </button>
 
         <div className="text-center mb-8">
-          <h2 className="text-3xl font-bold text-primary mb-4">{isRtl ? 'طلب حجز عمرة' : 'Demande de réservation Omra'}</h2>
+          <h2 className="text-3xl font-bold text-primary mb-4">
+            {isRtl ? 'طلب حجز عمرة' : locale === 'en' ? 'Umrah Booking Request' : 'Demande de réservation Omra'}
+          </h2>
           <div className="w-16 h-1 bg-gold rounded-full mx-auto mb-4"></div>
           {selectedHotel && (
             <div className="inline-block bg-gold/10 text-primary px-4 py-2 rounded-lg font-bold border border-gold/30">
-              {selectedHotel.name[locale as keyof typeof selectedHotel.name]}
+              <OmraLocalized value={selectedHotel.name} locale={locale} />
             </div>
           )}
         </div>
@@ -880,9 +1036,24 @@ export default function OmraBookingForm({ locale }: { locale: string }) {
                 <input type="email" name="email" defaultValue={userData?.email || ""} className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-gold focus:outline-none bg-gray-50" dir="ltr" />
               </div>
               <div>
-                <label className="block font-semibold text-gray-700 mb-2 flex items-center gap-2"><Tag className="h-5 w-5 text-gold" /> كود الخصم (اختياري)</label>
-                <input type="text" name="promo_code" placeholder="رمز المسوق الخاص بك" className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-gold focus:outline-none bg-gray-50 uppercase" dir="ltr" />
-                <p className="text-xs text-gray-500 mt-1">أدخل كود المسوق للحصول على تخفيض</p>
+                <label className="block font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                  <Tag className="h-5 w-5 text-gold" />{' '}
+                  {isRtl ? 'كود الخصم (اختياري)' : locale === 'en' ? 'Promo Code (Optional)' : 'Code Promo (Optionnel)'}
+                </label>
+                <input
+                  type="text"
+                  name="promo_code"
+                  placeholder={isRtl ? 'رمز المسوق الخاص بك' : 'CODE PROMO'}
+                  className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-gold focus:outline-none bg-gray-50 uppercase"
+                  dir="ltr"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  {isRtl
+                    ? 'أدخل كود المسوق للحصول على تخفيض'
+                    : locale === 'en'
+                      ? 'Enter a partner code for a discount'
+                      : 'Entrez un code promo pour bénéficier d’une réduction'}
+                </p>
               </div>
             </div>
             

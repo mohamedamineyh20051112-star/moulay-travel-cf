@@ -37,14 +37,17 @@ function HammamsAdminContent({ params }: { params: { locale: string } }) {
     }
   };
 
-  const handleCreateDestination = async (data: {nameAr: string, nameFr: string, image: string}) => {
+  const handleCreateDestination = async (data: { nameAr: string; nameFr: string; nameEn?: string; image: string; countryCode?: string }) => {
     try {
-      const docRef = await addDoc(collection(db, 'services_destinations'), {
+      const payload: Record<string, any> = {
         nameAr: data.nameAr,
         nameFr: data.nameFr || data.nameAr,
+        nameEn: data.nameEn || data.nameFr || data.nameAr,
         image: data.image || '',
-        images: data.image ? [data.image] : []
-      });
+        images: data.image ? [data.image] : [],
+      };
+      if (data.countryCode) payload.countryCode = data.countryCode.toLowerCase();
+      const docRef = await addDoc(collection(db, 'services_destinations'), payload);
       await fetchDestinations();
       return docRef.id;
     } catch (error: any) {
@@ -107,24 +110,33 @@ function HammamsAdminContent({ params }: { params: { locale: string } }) {
         </Link>
         
         <ChevronRight className="w-4 h-4 rtl:rotate-180" />
-        <span className="text-gray-900 font-medium">فنادق وبرامج الرحلات</span>
+        <span className="text-gray-900 font-medium">الحمامات والمنتجعات</span>
       </div>
 
       <div className="flex flex-col md:flex-row justify-between md:items-center gap-4 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">فنادق وبرامج الرحلات</h1>
-          <p className="text-gray-500 mt-1">إدارة الحمامات والعروض للرحلات المنظمة</p>
+          <h1 className="text-2xl font-bold text-gray-900">الحمامات والمنتجعات المعدنية</h1>
+          <p className="text-gray-500 mt-1">إدارة الحمامات والمحطات المعدنية وعروض الاستجمام</p>
         </div>
         
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full md:w-auto">
-          
+          <select
+            value={selectedDestId}
+            onChange={(e) => setSelectedDestId(e.target.value)}
+            className="border border-gray-200 rounded-xl p-3 bg-gray-50 text-gray-900 outline-none min-w-[200px] font-medium"
+          >
+            <option value="all">جميع الوجهات</option>
+            {destinations.map((d) => (
+              <option key={d.id} value={d.id}>{d.nameAr}</option>
+            ))}
+          </select>
           
           <button
             onClick={() => {
               setEditingHammam(null);
               setIsModalOpen(true);
             }}
-            className="flex items-center gap-2 bg-primary hover:bg-primary-dark text-white px-6 py-3 rounded-xl font-medium transition-colors whitespace-nowrap"
+            className="flex items-center justify-center gap-2 bg-primary hover:bg-primary-dark text-white px-6 py-3 rounded-xl font-medium transition-colors whitespace-nowrap"
           >
             <Plus className="w-5 h-5" />
             إضافة حمام/رحلة
