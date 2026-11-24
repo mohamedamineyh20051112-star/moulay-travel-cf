@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { EdgeGoogleSheet, getGoogleCredentials } from '@/lib/googleSheetsEdge';
+import { cleanEnvValue, EdgeGoogleSheet, getGoogleCredentials } from '@/lib/googleSheetsEdge';
 import {
   checkRateLimit,
   getClientIp,
@@ -68,7 +68,7 @@ export async function POST(request: Request) {
     }
 
     const creds = getGoogleCredentials();
-    const spreadsheetId = process.env.GOOGLE_SHEET_OMRA_ID?.trim();
+    const spreadsheetId = cleanEnvValue(process.env.GOOGLE_SHEET_OMRA_ID);
     if (!creds || !spreadsheetId) {
       console.error('Google credentials or GOOGLE_SHEET_OMRA_ID missing.');
       return NextResponse.json(

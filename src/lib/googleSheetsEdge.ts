@@ -26,12 +26,17 @@ function base64UrlEncodeString(str: string): string {
   return base64UrlEncodeBytes(new TextEncoder().encode(str));
 }
 
+export function cleanEnvValue(raw?: string): string {
+  return (raw || '').trim().replace(/^["'`]+|["'`]+$/g, '').trim();
+}
+
 function pemToArrayBuffer(pem: string): ArrayBuffer {
-  const cleaned = pem
+  const cleaned = cleanEnvValue(pem)
+    .replace(/\\r\\n/g, '\n')
     .replace(/\\n/g, '\n')
     .replace(/-----BEGIN PRIVATE KEY-----/g, '')
     .replace(/-----END PRIVATE KEY-----/g, '')
-    .replace(/\s+/g, '');
+    .replace(/[^A-Za-z0-9+/=]/g, '');
   const binary = atob(cleaned);
   const bytes = new Uint8Array(binary.length);
   for (let i = 0; i < binary.length; i++) {
@@ -100,12 +105,13 @@ async function getGoogleAccessToken(clientEmail: string, privateKeyPem: string):
 }
 
 export function getGoogleCredentials(): { clientEmail: string; privateKey: string } | null {
-  const clientEmail = (
-    process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL ||
-    process.env.GOOGLE_CLIENT_EMAIL ||
-    ''
-  ).trim();
-  const privateKey = (process.env.GOOGLE_PRIVATE_KEY || '').replace(/\\n/g, '\n').trim();
+  const clientEmail = cleanEnvValue(
+    process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL || process.env.GOOGLE_CLIENT_EMAIL
+  );
+  const privateKey = cleanEnvValue(process.env.GOOGLE_PRIVATE_KEY)
+    .replace(/\\r\\n/g, '\n')
+    .replace(/\\n/g, '\n')
+    .trim();
   if (!clientEmail || !privateKey) return null;
   return { clientEmail, privateKey };
 }
@@ -120,8 +126,8 @@ export class EdgeGoogleSheet {
   private privateKey: string;
 
   constructor(spreadsheetId: string, clientEmail: string, privateKey: string) {
-    this.spreadsheetId = spreadsheetId.trim();
-    this.clientEmail = clientEmail;
+    this.spreadsheetId = cleanEnvValue(spreadsheetId);
+    this.clientEmail = cleanEnvValue(clientEmail);
     this.privateKey = privateKey;
   }
 

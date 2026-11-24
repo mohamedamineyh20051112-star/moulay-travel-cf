@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { EdgeGoogleSheet, getGoogleCredentials } from '@/lib/googleSheetsEdge';
+import { cleanEnvValue, EdgeGoogleSheet, getGoogleCredentials } from '@/lib/googleSheetsEdge';
 import { db } from '@/lib/firebase';
 import { collection, addDoc } from 'firebase/firestore';
 import { checkRateLimit, getClientIp, sanitizeText } from '@/lib/security';
@@ -9,17 +9,29 @@ export const runtime = 'edge';
 const SERVICE_TAB_MAP: Record<string, string> = {
   car_rental: 'car',
   car: 'car',
+  cars: 'car',
   vip: 'VIP',
+  vip_trips: 'VIP',
   visa: 'Visas',
   visas: 'Visas',
   organized_trips: 'Voyages',
   custom_trips: 'Sur mesure',
   wellness: 'Bien-être',
+  hammams: 'Bien-être',
   insurance: 'Assurance',
   airplane: 'airplane',
   train: 'train',
   ferry: 'ferry',
 };
+
+function resolveTabTitle(formId: string): string {
+  if (SERVICE_TAB_MAP[formId]) return SERVICE_TAB_MAP[formId];
+  if (formId.startsWith('car_')) return 'car';
+  if (formId.startsWith('vip_trips_') || formId.startsWith('vip_')) return 'VIP';
+  if (formId.startsWith('organized_trips_')) return 'Voyages';
+  if (formId.startsWith('hammams_')) return 'Bien-être';
+  return 'Autres';
+}
 
 export async function POST(req: Request) {
   try {
@@ -74,31 +86,35 @@ export async function POST(req: Request) {
     }
 
     // 2. Save to Google Sheets via Edge REST API
+    const creds = getGoogleCredentials();
+    const spreadsheetId = cleanEnvValue(
+      process.env.GOOGLE_SHEET_AUTRES_ID || process.env.GOOGLE_SHEET_ID
+    );
+
+    if (!creds || !spreadsheetId) {
+      console.error('Google Sheets credentials or GOOGLE_SHEET_AUTRES_ID missing.');
+      return NextResponse.json(
+        { success: false, error: 'Configuration Google Sheets manquante sur le serveur.' },
+        { status: 500 }
+      );
+    }
+
     try {
-      const creds = getGoogleCredentials();
-      const spreadsheetId = (
-        process.env.GOOGLE_SHEET_AUTRES_ID || process.env.GOOGLE_SHEET_ID
-      )?.trim();
+      const tabTitle = resolveTabTitle(formId);
+      const sheet = new EdgeGoogleSheet(spreadsheetId, creds.clientEmail, creds.privateKey);
+      const rowData: Record<string, string> = {
+        Date: new Date().toLocaleString('fr-FR', { timeZone: 'Africa/Algiers' }),
+        Service: formId,
+        ...sanitizedData,
+      };
 
-      if (creds && spreadsheetId) {
-        let tabTitle = SERVICE_TAB_MAP[formId] || 'Autres';
-        if (formId.startsWith('car_')) {
-          tabTitle = 'car';
-        }
-
-        const sheet = new EdgeGoogleSheet(spreadsheetId, creds.clientEmail, creds.privateKey);
-        const rowData: Record<string, string> = {
-          Date: new Date().toLocaleString('fr-FR', { timeZone: 'Africa/Algiers' }),
-          Service: formId,
-          ...sanitizedData,
-        };
-
-        await sheet.appendRow(tabTitle, ['Date', 'Service', 'Détails'], rowData, true);
-      } else {
-        console.warn('Google Sheets environment variables are missing. Skipping Google Sheets integration.');
-      }
+      await sheet.appendRow(tabTitle, ['Date', 'Service', 'Détails'], rowData, true);
     } catch (sheetErr) {
       console.error('Google Sheets save error:', sheetErr);
+      return NextResponse.json(
+        { success: false, error: "Erreur lors de l'enregistrement dans Google Sheets." },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({ success: true });
